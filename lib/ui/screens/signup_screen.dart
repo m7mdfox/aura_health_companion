@@ -1,17 +1,16 @@
 import 'package:aura_health_companion/data/supabase_service.dart';
-import 'package:aura_health_companion/ui/screens/home_screen.dart';
-import 'package:aura_health_companion/ui/screens/signup_screen.dart';
+import 'package:aura_health_companion/ui/screens/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class SignUpScreen extends StatefulWidget {
+  const SignUpScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<SignUpScreen> createState() => _SignUpScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -19,7 +18,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
+      appBar: AppBar(title: const Text('Sign Up')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -42,6 +41,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   return null;
                 },
               ),
+              
               TextFormField(
                 controller: _passwordController,
                 decoration: const InputDecoration(labelText: 'Password'),
@@ -52,44 +52,37 @@ class _LoginScreenState extends State<LoginScreen> {
                 onPressed: () async {
                   if (_formKey.currentState!.validate()) {
                     try {
-                      await SupabaseService.signIn(
+                      await SupabaseService.signUp(
                         _emailController.text,
                         _passwordController.text,
                       );
                       if (mounted) {
-                        await showDialog(
-                          context: context,
-                          builder: (context) {
-                            return AlertDialog(
-                              title: const Text('Login Successful'),
-                              content: const Text('Welcome back!'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                  },
-                                  child: const Text('OK'),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-                        if (mounted) {
-                          Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(
-                              builder: (context) => const HomeScreen(),
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Please check your email for confirmation.',
                             ),
-                          );
-                        }
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(
+                            builder: (context) => const LoginScreen(),
+                          ),
+                        );
                       }
                     } on AuthApiException catch (e) {
                       if (!mounted) return;
                       var message = e.message;
-                      if (e.message.toLowerCase().contains(
-                        'email not confirmed',
-                      )) {
-                        message =
-                            'Please check your email to confirm your account.';
+                      final lower = message.toLowerCase();
+                      // Detect common rate-limit responses and show a specific message
+                      if ((lower.contains('rate') &&
+                              (lower.contains('limit') ||
+                                  lower.contains('limited'))) ||
+                          lower.contains('too many') ||
+                          lower.contains('429') ||
+                          lower.contains('requests')) {
+                        message = 'email rate limit exceeded';
                       }
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -100,17 +93,17 @@ class _LoginScreenState extends State<LoginScreen> {
                     }
                   }
                 },
-                child: const Text('Login'),
+                child: const Text('Sign Up'),
               ),
               TextButton(
                 onPressed: () {
                   Navigator.of(context).pushReplacement(
                     MaterialPageRoute(
-                      builder: (context) => const SignUpScreen(),
+                      builder: (context) => const LoginScreen(),
                     ),
                   );
                 },
-                child: const Text('Don\'t have an account? Sign up'),
+                child: const Text('Already have an account? Login'),
               ),
             ],
           ),
