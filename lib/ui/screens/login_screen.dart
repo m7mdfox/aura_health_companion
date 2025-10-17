@@ -1,8 +1,12 @@
 import 'package:aura_health_companion/data/supabase_service.dart';
 import 'package:aura_health_companion/ui/screens/home_screen.dart';
 import 'package:aura_health_companion/ui/screens/signup_screen.dart';
+import 'package:aura_health_companion/ui/widgets/error_animation.dart';
+import 'package:aura_health_companion/ui/widgets/success_animation.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+// import 'success_animation.dart';
+// import 'error_animation.dart'; // Import the new error animation widget
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -60,27 +64,18 @@ class _LoginScreenState extends State<LoginScreen> {
                         await showDialog(
                           context: context,
                           builder: (context) {
-                            return AlertDialog(
-                              title: const Text('Login Successful'),
-                              content: const Text('Welcome back!'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                  },
-                                  child: const Text('OK'),
-                                ),
-                              ],
+                            return SuccessAnimation(
+                              message: 'Welcome back!',
+                              onComplete: () {
+                                Navigator.of(context).pushReplacement(
+                                  MaterialPageRoute(
+                                    builder: (context) => const HomeScreen(),
+                                  ),
+                                );
+                              },
                             );
                           },
                         );
-                        if (mounted) {
-                          Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(
-                              builder: (context) => const HomeScreen(),
-                            ),
-                          );
-                        }
                       }
                     } on AuthApiException catch (e) {
                       if (!mounted) return;
@@ -91,11 +86,16 @@ class _LoginScreenState extends State<LoginScreen> {
                         message =
                             'Please check your email to confirm your account.';
                       }
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(message),
-                          backgroundColor: Colors.red,
-                        ),
+                      await showDialog(
+                        context: context,
+                        builder: (context) {
+                          return ErrorAnimation(
+                            message: message,
+                            onDismiss: () {
+                              Navigator.of(context).pop();
+                            },
+                          );
+                        },
                       );
                     }
                   }

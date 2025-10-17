@@ -30,3 +30,6 @@ class SupabaseService {
     await client.auth.signOut();
   }
 }
+
+
+
