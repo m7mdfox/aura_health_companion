@@ -11,7 +11,7 @@ CREATE TABLE profiles (
   birthdate date,
   height_cm numeric(5,2),
   weight_kg numeric(6,2),
-  chronic_conditions text[], -- e.g. ['diabetes','hypertension']
+  chronic_conditions text[], -- e.g. ['diabetes','hypertension ']
   avatar_url text,
   locale text DEFAULT 'ar',
   created_at timestamptz DEFAULT now(),
