@@ -46,19 +46,16 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-
       body: Center(
         child: Text(
           'Welcome, $userEmail!',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: const Color.fromARGB(255, 0, 149, 40),
+            color: const Color(0xFF0025CC),
           ),
         ),
       ),
-
-
       bottomNavigationBar: NavigationBarr(
         selectedIndex: _selectedIndex,
         onTap: (index) {
