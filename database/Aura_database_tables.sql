@@ -1,4 +1,4 @@
--- Enable uuid generator (if not present)
+
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- Profiles (linked to auth.users)
