@@ -134,7 +134,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: 4),
                       const Text(
-                        'Unlock AURA premium to unlock \nall features.',
+                        'Get AURA Premium to unlock \nall features.',
                         style: TextStyle(
                           color: Color.fromRGBO(255, 255, 255, 0.7),
                           fontSize: 14,
@@ -349,7 +349,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: _selectedIndex == 0
           ? AppBar(
-              title: const Text('Home'),
+              title: Text('$userEmail 👋', style: TextStyle(fontFamily: GoogleFonts.poppins().fontFamily)),
               actions: [
                 IconButton(
                   onPressed: () async {
