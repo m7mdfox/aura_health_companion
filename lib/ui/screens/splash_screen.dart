@@ -1,4 +1,4 @@
-import 'package:aura_health_companion/data/supabase_service.dart';
+import 'package:aura_health_companion/data/auth_service.dart';
 import 'package:aura_health_companion/ui/screens/home_screen.dart';
 import 'package:aura_health_companion/ui/screens/login_screen.dart';
 import 'package:flutter/material.dart';
@@ -31,7 +31,6 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
     );
 
-    // Heartbeat pulse effect for logo
     _pulseAnimation = TweenSequence<double>([
       TweenSequenceItem(
         tween: Tween<double>(begin: 0.95, end: 1.05),
@@ -60,7 +59,6 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
 
-    // Subtle orbital rotation effect for logo
     _orbitAnimation = Tween<double>(begin: 0.0, end: 2 * math.pi).animate(
       CurvedAnimation(
         parent: _controller,
@@ -68,7 +66,6 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
 
-    // Sequential text reveal effect
     _textRevealAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
@@ -109,7 +106,7 @@ class _SplashScreenState extends State<SplashScreen>
     }
     if (!mounted) return;
 
-    final session = SupabaseService.client.auth.currentSession;
+    final isLoggedIn = AuthService.isLoggedIn;
     if (!mounted) return;
 
     await Navigator.of(context).pushReplacement(
@@ -117,7 +114,7 @@ class _SplashScreenState extends State<SplashScreen>
         pageBuilder: (context, animation, secondaryAnimation) {
           return ScaleTransition(
             scale: animation,
-            child: session != null ? const HomeScreen() : const LoginScreen(),
+            child: isLoggedIn ? const HomeScreen() : const LoginScreen(),
           );
         },
         transitionDuration: const Duration(milliseconds: 600),
@@ -173,11 +170,9 @@ class _SplashScreenState extends State<SplashScreen>
                       height: 250,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                       
                       ),
                       child: ClipOval(
                         child: Image.asset(
-                       
                           'assets/animations/logo.png',
                           fit: BoxFit.contain,
                           errorBuilder: (context, error, stackTrace) {

@@ -1,4 +1,5 @@
-import 'package:aura_health_companion/data/supabase_service.dart';
+import 'package:aura_health_companion/data/auth_service.dart';
+import 'package:aura_health_companion/logic/auth_controller.dart';
 import 'package:aura_health_companion/ui/screens/chatbot_screen.dart';
 import 'package:aura_health_companion/ui/screens/login_screen.dart';
 import 'package:aura_health_companion/ui/screens/profile_screen.dart';
@@ -8,6 +9,7 @@ import 'package:aura_health_companion/ui/widgets/soon_animation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ionicons/ionicons.dart';
+import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,7 +21,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
-  // 🔹 Widget Helper لبناء كروت الإحصائيات
   Widget _buildStatCard(String title, String value, String unit, Color bgColor,
       {Color textColor = Colors.black, bool isLarge = false, required IconData icon, required Color iconColor}) {
     return Container(
@@ -96,15 +97,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // 🩵 Home Screen Layout
-  Widget _buildHomeScreen(String userEmail) {
+  Widget _buildHomeScreen(String userName) {
     return Scaffold(
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 🔹 Aura Premium Card
             Container(
               height: 170,
               width: double.infinity,
@@ -185,10 +184,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-
             const SizedBox(height: 25),
-
-            // 🔹 Today’s In Section
             Text(
               "Today's In",
               style: TextStyle(
@@ -198,8 +194,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 10),
-
-            // 🔹 Day Selector Row
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
@@ -212,10 +206,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     {"day": "Wed", "date": "24"},
                     {"day": "Thu", "date": "25"},
                   ];
-
-                  final int selectedIndex = 3; // Tue 23
+                  final int selectedIndex = 3;
                   final bool isActive = index == selectedIndex;
-
                   return Container(
                     width: 49,
                     height: 60,
@@ -268,10 +260,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 }),
               ),
             ),
-
             const SizedBox(height: 20),
-
-            // 🔹 Daily Overview Cards
             GridView.count(
               physics: const NeverScrollableScrollPhysics(),
               shrinkWrap: true,
@@ -280,52 +269,49 @@ class _HomeScreenState extends State<HomeScreen> {
               mainAxisSpacing: 12,
               childAspectRatio: 1.3,
               children: [
-                // Row 1: Dark (left), Light (right)
                 _buildStatCard(
                   "Calories",
                   "620.68",
                   "kcal",
-                  const Color(0xFF0F1120), // Dark
+                  const Color(0xFF0F1120),
                   textColor: Colors.white,
                   icon: Ionicons.flame,
-                  iconColor: const Color(0xFFFF5733), // Orange
+                  iconColor: const Color(0xFFFF5733),
                 ),
                 _buildStatCard(
                   "Heart Rate",
                   "72",
                   "bpm",
-                  const Color(0xFFF9FAFB), // Light
+                  const Color(0xFFF9FAFB),
                   icon: Ionicons.heart,
-                  iconColor: const Color(0xFFEF4444), // Red
+                  iconColor: const Color(0xFFEF4444),
                 ),
-                // Row 2: Light (left), Dark (right)
                 _buildStatCard(
                   "Weight",
                   "89.5",
                   "lbs",
-                  const Color(0xFFF9FAFB), // Light
+                  const Color(0xFFF9FAFB),
                   icon: Ionicons.scale,
-                  iconColor: const Color(0xFF10B981), // Green
+                  iconColor: const Color(0xFF10B981),
                 ),
                 _buildStatCard(
                   "Steps",
                   "5,423",
                   "steps",
-                  const Color(0xFF0F1120), // Dark
+                  const Color(0xFF0F1120),
                   textColor: Colors.white,
                   icon: Ionicons.footsteps,
-                  iconColor: const Color(0xFF60A5FA), // Blue
+                  iconColor: const Color(0xFF60A5FA),
                 ),
-                // Row 3: Dark (left, spans both columns for Wellness Score)
                 _buildStatCard(
                   "Wellness Score",
                   "Good",
                   "You’re healthier than 95% people",
-                  const Color(0xFF0F1120), // Dark
+                  const Color(0xFF0F1120),
                   textColor: Colors.white,
                   isLarge: true,
                   icon: Ionicons.star,
-                  iconColor: const Color(0xFFFBBF24), // Gold
+                  iconColor: const Color(0xFFFBBF24),
                 ),
               ],
             ),
@@ -335,9 +321,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // 🔹 Screens list
-  List<Widget> _screens(String userEmail) => [
-        _buildHomeScreen(userEmail),
+  List<Widget> _screens(String userName) => [
+        _buildHomeScreen(userName),
         const ServicesScreen(),
         const ChatbotScreen(),
         const ProfileScreen(),
@@ -345,16 +330,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final userEmail = SupabaseService.client.auth.currentUser?.email ?? 'Guest';
+    final authController = Provider.of<AuthController>(context);
+    final userName = AuthService.profile?['full_name'] ?? 'Guest';
     return Scaffold(
       appBar: _selectedIndex == 0
           ? AppBar(
-              title: Text('$userEmail 👋', style: TextStyle(fontFamily: GoogleFonts.poppins().fontFamily)),
+              title: Text('$userName 👋', style: TextStyle(fontFamily: GoogleFonts.poppins().fontFamily)),
               actions: [
                 IconButton(
                   onPressed: () async {
                     try {
-                      await SupabaseService.signOut();
+                      AuthService.logout();
+                      authController.notifyAuthChange();
                       if (context.mounted) {
                         Navigator.of(context).pushReplacement(
                           MaterialPageRoute(
@@ -365,7 +352,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     } catch (e) {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Failed to sign out')),
+                          SnackBar(content: Text('Failed to sign out: $e')),
                         );
                       }
                     }
@@ -375,7 +362,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             )
           : null,
-      body: _screens(userEmail)[_selectedIndex],
+      body: _screens(userName)[_selectedIndex],
       bottomNavigationBar: NavigationBarr(
         selectedIndex: _selectedIndex,
         onTap: (index) {

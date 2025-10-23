@@ -1,45 +1,72 @@
-# Miscellaneous
-*.class
-*.log
-*.pyc
-*.swp
-.DS_Store
-.atom/
-.build/
-.buildlog/
-.history
-.svn/
-.swiftpm/
-migrate_working_dir/
-
-# IntelliJ related
-*.iml
-*.ipr
-*.iws
-.idea/
-
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
-
-# Flutter/Dart/Pub related
+# =========================
+# Flutter / Dart
+# =========================
 **/doc/api/
 **/ios/Flutter/.last_build_id
 .dart_tool/
+.flutter-plugins
 .flutter-plugins-dependencies
+.packages
 .pub-cache/
 .pub/
-/build/
-/coverage/
-
-# Symbolication related
+build/
+coverage/
+*.lock
 app.*.symbols
-
-# Obfuscation related
 app.*.map.json
 
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
+# =========================
+# Android / iOS
+# =========================
+android/app/debug/
+android/app/profile/
+android/app/release/
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/ServiceDefinitions.json
+
+# =========================
+# Node.js / Server (aura_server)
+# =========================
+aura_server/node_modules/
+aura_server/package-lock.json
+aura_server/.env
+aura_server/debug.log
+aura_server/npm-debug.log*
+aura_server/yarn-debug.log*
+aura_server/yarn-error.log*
+aura_server/.DS_Store
+
+# =========================
+# General system files
+# =========================
+*.log
+*.swp
+.DS_Store
+Thumbs.db
+*.tmp
+*.bak
+
+# =========================
+# IDE / Editor
+# =========================
+.vscode/
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# =========================
+# Miscellaneous
+# =========================
+.env
+.env.*
+profile.json
+
+
+# Email credentials
+.env
+*.env.local
+*.env.*.local

@@ -1,13 +1,13 @@
-import 'package:aura_health_companion/data/supabase_service.dart';
+import 'package:aura_health_companion/data/auth_service.dart';
+import 'package:aura_health_companion/logic/auth_controller.dart';
 import 'package:aura_health_companion/ui/screens/home_screen.dart';
 import 'package:aura_health_companion/ui/screens/signup_screen.dart';
 import 'package:aura_health_companion/ui/widgets/error_animation.dart';
 import 'package:aura_health_companion/ui/widgets/success_animation.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ionicons/ionicons.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:provider/provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -27,7 +27,7 @@ class _LoginScreenState extends State<LoginScreen> {
         pageBuilder: (context, animation, secondaryAnimation) =>
             const SignUpScreen(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(1.0, 0.0); // Slide from right
+          const begin = Offset(1.0, 0.0);
           const end = Offset.zero;
           const curve = Curves.easeInOut;
           var tween =
@@ -42,13 +42,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authController = Provider.of<AuthController>(context);
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
       body: Stack(
         children: [
-          // Background image in top-right quarter with transparency
           Positioned(
             top: 0,
             right: 0,
@@ -62,7 +62,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ),
-          // Existing content
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Form(
@@ -71,9 +70,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const SizedBox(
-                        height:
-                            60), // Adjusted to position switcher at ~103px from top
+                    const SizedBox(height: 60),
                     Center(
                       child: Image.asset('assets/loginLogo.png', width: 150),
                     ),
@@ -98,7 +95,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 30),
-                    // Switcher between Login and SignUp
                     Container(
                       width: 327,
                       height: 36,
@@ -131,7 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   borderRadius: BorderRadius.circular(7),
                                 ),
                               ),
-                              onPressed: () {}, // Already on Login screen
+                              onPressed: () {},
                               child: Text(
                                 'Login',
                                 style: TextStyle(
@@ -141,7 +137,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 1), // Gap between buttons
+                          const SizedBox(width: 1),
                           Expanded(
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
@@ -167,7 +163,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    // Email Field
                     SizedBox(
                       width: 327,
                       height: 69,
@@ -231,7 +226,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    // Password Field
                     SizedBox(
                       width: 327,
                       height: 69,
@@ -290,7 +284,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 30),
-                    // Login Button
                     SizedBox(
                       width: 327,
                       height: 55,
@@ -306,10 +299,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         onPressed: () async {
                           if (_formKey.currentState!.validate()) {
                             try {
-                              await SupabaseService.signIn(
+                              await AuthService.login(
                                 _emailController.text,
                                 _passwordController.text,
                               );
+                              authController.notifyAuthChange();
                               if (mounted) {
                                 await showDialog(
                                   context: context,
@@ -328,14 +322,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                   },
                                 );
                               }
-                            } on AuthApiException catch (e) {
+                            } catch (e) {
                               if (!mounted) return;
-                              var message = e.message;
-                              if (e.message
-                                  .toLowerCase()
-                                  .contains('email not confirmed')) {
-                                message =
-                                    'Please check your email to confirm your account.';
+                              var message = e.toString();
+                              if (message.contains('Invalid')) {
+                                message = 'Invalid email or password';
                               }
                               await showDialog(
                                 context: context,
@@ -361,7 +352,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 25),
-                    // Sign Up Text
                     Column(
                       children: [
                         Row(

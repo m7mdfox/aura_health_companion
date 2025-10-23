@@ -1,10 +1,12 @@
-import 'package:aura_health_companion/data/supabase_service.dart';
+import 'package:aura_health_companion/data/auth_service.dart';
+import 'package:aura_health_companion/logic/auth_controller.dart';
 import 'package:aura_health_companion/ui/screens/login_screen.dart';
+import 'package:aura_health_companion/ui/screens/otp_verification_screen.dart';
 import 'package:aura_health_companion/ui/widgets/error_animation.dart';
 import 'package:aura_health_companion/ui/widgets/success_animation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:provider/provider.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -15,12 +17,24 @@ class SignUpScreen extends StatefulWidget {
 
 class _SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _birthdateController = TextEditingController();
   final _weightController = TextEditingController();
   final _heightController = TextEditingController();
   String? _selectedGender;
+  DateTime? _selectedBirthdate;
+  final List<String> _selectedConditions = [];
+  final List<String> _availableConditions = [
+    'Diabetes',
+    'Hypertension',
+    'Asthma',
+    'Heart Disease',
+    'None'
+  ];
 
   void _navigateToLogin() {
     Navigator.of(context).pushReplacement(
@@ -28,7 +42,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         pageBuilder: (context, animation, secondaryAnimation) =>
             const LoginScreen(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(-1.0, 0.0); // Slide from left
+          const begin = Offset(-1.0, 0.0);
           const end = Offset.zero;
           const curve = Curves.easeInOut;
           var tween =
@@ -43,13 +57,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authController = Provider.of<AuthController>(context);
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
       body: Stack(
         children: [
-          // Background image in top-right quarter with transparency
           Positioned(
             top: 0,
             right: 0,
@@ -63,7 +77,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
             ),
           ),
-          // Main content
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Form(
@@ -72,9 +85,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const SizedBox(
-                        height:
-                            60), // Adjusted to position switcher at ~103px from top
+                    const SizedBox(height: 60),
                     Center(
                       child: Image.asset('assets/loginLogo.png', width: 150),
                     ),
@@ -99,7 +110,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                     ),
                     const SizedBox(height: 30),
-                    // Switcher between Login and SignUp
                     Container(
                       width: 327,
                       height: 36,
@@ -143,7 +153,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 1), // Gap between buttons
+                          const SizedBox(width: 1),
                           Expanded(
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
@@ -154,7 +164,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   borderRadius: BorderRadius.circular(7),
                                 ),
                               ),
-                              onPressed: () {}, // Already on SignUp screen
+                              onPressed: () {},
                               child: Text(
                                 'Sign Up',
                                 style: TextStyle(
@@ -168,7 +178,62 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    // Email Field
+                    SizedBox(
+                      width: 327,
+                      child: TextFormField(
+                        controller: _fullNameController,
+                        style:
+                            const TextStyle(fontSize: 16, color: Colors.black),
+                        decoration: InputDecoration(
+                          labelText: 'Full Name',
+                          labelStyle: const TextStyle(color: Colors.grey),
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 20),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: Color(0xFF0025CC),
+                              width: 2,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: Color(0xFF0F1120),
+                              width: 2,
+                            ),
+                          ),
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: Colors.red,
+                              width: 2,
+                            ),
+                          ),
+                          focusedErrorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: Colors.red,
+                              width: 2,
+                            ),
+                          ),
+                          errorStyle: TextStyle(
+                            color: Colors.red,
+                            fontFamily: GoogleFonts.inter().fontFamily,
+                            fontSize: 12,
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your full name';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     SizedBox(
                       width: 327,
                       child: TextFormField(
@@ -231,7 +296,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    // Password Field
                     SizedBox(
                       width: 327,
                       child: TextFormField(
@@ -292,7 +356,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    // Confirm Password Field
                     SizedBox(
                       width: 327,
                       child: TextFormField(
@@ -353,11 +416,137 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    // Weight and Height Fields in a Row
+                    SizedBox(
+                      width: 327,
+                      child: TextFormField(
+                        controller: _phoneController,
+                        keyboardType: TextInputType.phone,
+                        style:
+                            const TextStyle(fontSize: 16, color: Colors.black),
+                        decoration: InputDecoration(
+                          labelText: 'Phone',
+                          labelStyle: const TextStyle(color: Colors.grey),
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 20),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: Color(0xFF0025CC),
+                              width: 2,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: Color(0xFF0F1120),
+                              width: 2,
+                            ),
+                          ),
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: Colors.red,
+                              width: 2,
+                            ),
+                          ),
+                          focusedErrorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: Colors.red,
+                              width: 2,
+                            ),
+                          ),
+                          errorStyle: TextStyle(
+                            color: Colors.red,
+                            fontFamily: GoogleFonts.inter().fontFamily,
+                            fontSize: 12,
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your phone number';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: 327,
+                      child: TextFormField(
+                        controller: _birthdateController,
+                        readOnly: true,
+                        style:
+                            const TextStyle(fontSize: 16, color: Colors.black),
+                        decoration: InputDecoration(
+                          labelText: 'Birthdate',
+                          labelStyle: const TextStyle(color: Colors.grey),
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 20),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: Color(0xFF0025CC),
+                              width: 2,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: Color(0xFF0F1120),
+                              width: 2,
+                            ),
+                          ),
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: Colors.red,
+                              width: 2,
+                            ),
+                          ),
+                          focusedErrorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: Colors.red,
+                              width: 2,
+                            ),
+                          ),
+                          errorStyle: TextStyle(
+                            color: Colors.red,
+                            fontFamily: GoogleFonts.inter().fontFamily,
+                            fontSize: 12,
+                          ),
+                          suffixIcon: IconButton(
+                            icon: const Icon(Icons.calendar_today),
+                            onPressed: () async {
+                              final date = await showDatePicker(
+                                context: context,
+                                initialDate: DateTime.now(),
+                                firstDate: DateTime(1900),
+                                lastDate: DateTime.now(),
+                              );
+                              if (date != null) {
+                                setState(() {
+                                  _selectedBirthdate = date;
+                                  _birthdateController.text =
+                                      "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+                                });
+                              }
+                            },
+                          ),
+                        ),
+                        validator: (_) =>
+                            _selectedBirthdate == null ? 'Required' : null,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Weight Field
                         SizedBox(
                           width: 155,
                           child: TextFormField(
@@ -410,7 +599,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               if (value == null || value.isEmpty) {
                                 return 'Enter weight';
                               }
-                              final weight = double.tryParse(value);
+                              final weight = int.tryParse(value);
                               if (weight == null || weight <= 0) {
                                 return 'Enter valid weight';
                               }
@@ -419,7 +608,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           ),
                         ),
                         const SizedBox(width: 17),
-                        // Height Field
                         SizedBox(
                           width: 155,
                           child: TextFormField(
@@ -472,7 +660,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               if (value == null || value.isEmpty) {
                                 return 'Enter height';
                               }
-                              final height = double.tryParse(value);
+                              final height = int.tryParse(value);
                               if (height == null || height <= 0) {
                                 return 'Enter valid height';
                               }
@@ -483,112 +671,152 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    // Gender Selection
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Chronic Conditions (Optional)',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            fontFamily: GoogleFonts.inter().fontFamily,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: _availableConditions.map((condition) {
+                            final isSelected =
+                                _selectedConditions.contains(condition);
+                            return ChoiceChip(
+                              label: Text(condition),
+                              selected: isSelected,
+                              selectedColor: const Color(0xFF0025CC),
+                              labelStyle: TextStyle(
+                                color:
+                                    isSelected ? Colors.white : Colors.black,
+                                fontFamily: GoogleFonts.inter().fontFamily,
+                              ),
+                              onSelected: (selected) {
+                                setState(() {
+                                  if (selected) {
+                                    if (condition == 'None') {
+                                      _selectedConditions.clear();
+                                      _selectedConditions.add('None');
+                                    } else {
+                                      _selectedConditions.remove('None');
+                                      _selectedConditions.add(condition);
+                                    }
+                                  } else {
+                                    _selectedConditions.remove(condition);
+                                  }
+                                });
+                              },
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            // Male Button
-                            GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _selectedGender = 'Male';
-                                });
-                              },
-                              child: Container(
-                                width: 155,
-                                height: 55,
-                                decoration: BoxDecoration(
-                                  gradient: _selectedGender == 'Male'
-                                      ? const LinearGradient(
-                                          begin: Alignment.topCenter,
-                                          end: Alignment.bottomCenter,
-                                          colors: [
-                                            Color(0xFF0025CC), // Top
-                                            Color(0xFF0F1120), // Bottom
-                                          ],
-                                        )
-                                      : null,
-                                  color: _selectedGender != 'Male'
-                                      ? Colors.grey[300]
-                                      : null, // fallback for unselected
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.2),
-                                      blurRadius: 5,
-                                      offset: const Offset(0, 3),
-                                    ),
-                                  ],
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectedGender = 'male';
+                            });
+                          },
+                          child: Container(
+                            width: 155,
+                            height: 55,
+                            decoration: BoxDecoration(
+                              gradient: _selectedGender == 'male'
+                                  ? const LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Color(0xFF0025CC),
+                                        Color(0xFF0F1120),
+                                      ],
+                                    )
+                                  : null,
+                              color: _selectedGender != 'male'
+                                  ? Colors.grey[300]
+                                  : null,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 5,
+                                  offset: const Offset(0, 3),
                                 ),
-                                alignment: Alignment.center,
-                                child: Text(
-                                  'Male',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: _selectedGender == 'Male'
-                                        ? Colors.white
-                                        : Colors.black,
-                                    fontFamily: GoogleFonts.inter().fontFamily,
-                                  ),
-                                ),
+                              ],
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              'Male',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: _selectedGender == 'male'
+                                    ? Colors.white
+                                    : Colors.black,
+                                fontFamily: GoogleFonts.inter().fontFamily,
                               ),
                             ),
-                            const SizedBox(width: 17),
-                            // Female Button
-                            GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _selectedGender = 'Female';
-                                });
-                              },
-                              child: Container(
-                                width: 155,
-                                height: 55,
-                                decoration: BoxDecoration(
-                                  gradient: _selectedGender == 'Female'
-                                      ? const LinearGradient(
-                                          begin: Alignment.topCenter,
-                                          end: Alignment.bottomCenter,
-                                          colors: [
-                                            Color(0xFF0025CC),
-                                            Color(0xFF0F1120),
-                                          ],
-                                        )
-                                      : null,
-                                  color: _selectedGender != 'Female'
-                                      ? Colors.grey[300]
-                                      : null,
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.2),
-                                      blurRadius: 5,
-                                      offset: const Offset(0, 3),
-                                    ),
-                                  ],
+                          ),
+                        ),
+                        const SizedBox(width: 17),
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectedGender = 'female';
+                            });
+                          },
+                          child: Container(
+                            width: 155,
+                            height: 55,
+                            decoration: BoxDecoration(
+                              gradient: _selectedGender == 'female'
+                                  ? const LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Color(0xFF0025CC),
+                                        Color(0xFF0F1120),
+                                      ],
+                                    )
+                                  : null,
+                              color: _selectedGender != 'female'
+                                  ? Colors.grey[300]
+                                  : null,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 5,
+                                  offset: const Offset(0, 3),
                                 ),
-                                alignment: Alignment.center,
-                                child: Text(
-                                  'Female',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: _selectedGender == 'Female'
-                                        ? Colors.white
-                                        : Colors.black,
-                                    fontFamily: GoogleFonts.inter().fontFamily,
-                                  ),
-                                ),
+                              ],
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              'Female',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: _selectedGender == 'female'
+                                    ? Colors.white
+                                    : Colors.black,
+                                fontFamily: GoogleFonts.inter().fontFamily,
                               ),
                             ),
-                          ],
-                        )
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 30),
-                    // Sign Up Button
                     SizedBox(
                       width: 327,
                       height: 55,
@@ -617,36 +845,56 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               );
                               return;
                             }
-                            try {
-                              await SupabaseService.signUp(
-                                _emailController.text,
-                                _passwordController.text,
+                            if (_selectedBirthdate == null) {
+                              await showDialog(
+                                context: context,
+                                builder: (context) {
+                                  return ErrorAnimation(
+                                    message: 'Please select your birthdate',
+                                    onDismiss: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                  );
+                                },
                               );
+                              return;
+                            }
+                            try {
+                              // Send OTP
+                              await AuthService.sendOTP(_emailController.text);
+
+                              // Prepare user data
+                              final userData = {
+                                "full_name": _fullNameController.text,
+                                "email": _emailController.text,
+                                "password": _passwordController.text,
+                                "phone": _phoneController.text,
+                                "gender": _selectedGender!,
+                                "birthdate": _selectedBirthdate!.toIso8601String(),
+                                "height_cm": int.parse(_heightController.text),
+                                "weight_kg": int.parse(_weightController.text),
+                                "chronic_conditions": _selectedConditions,
+                                "avatar_url": "",
+                                "locale": "en",
+                              };
+
+                              // Navigate to OTP verification screen
                               if (mounted) {
-                                await showDialog(
-                                  context: context,
-                                  builder: (context) {
-                                    return SuccessAnimation(
-                                      message:
-                                          'Please check your email for confirmation.',
-                                      onComplete: () {
-                                        _navigateToLogin();
-                                      },
-                                    );
-                                  },
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => OTPVerificationScreen(
+                                      userData: userData,
+                                    ),
+                                  ),
                                 );
                               }
-                            } on AuthApiException catch (e) {
+                            } catch (e) {
                               if (!mounted) return;
-                              var message = e.message;
-                              final lower = message.toLowerCase();
-                              if ((lower.contains('rate') &&
-                                      (lower.contains('limit') ||
-                                          lower.contains('limited'))) ||
-                                  lower.contains('too many') ||
-                                  lower.contains('429') ||
-                                  lower.contains('requests')) {
-                                message = 'Email rate limit exceeded';
+                              var message = e.toString().replaceAll('Exception: ', '');
+                              if (message.contains('already used')) {
+                                message = 'Email already exists';
+                              } else {
+                                message = 'Failed to send OTP. Please try again.';
                               }
                               await showDialog(
                                 context: context,
@@ -663,7 +911,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           }
                         },
                         child: Text(
-                          'Sign Up',
+                          'Send OTP',
                           style: TextStyle(
                             fontSize: 18,
                             fontFamily: GoogleFonts.inter().fontFamily,
@@ -672,11 +920,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                     ),
                     const SizedBox(height: 25),
-                    // Login Text
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [],
-                    ),
                   ],
                 ),
               ),
@@ -689,9 +932,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   @override
   void dispose() {
+    _fullNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _phoneController.dispose();
+    _birthdateController.dispose();
     _weightController.dispose();
     _heightController.dispose();
     super.dispose();
