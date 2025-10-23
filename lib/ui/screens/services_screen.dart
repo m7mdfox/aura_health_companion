@@ -1,10 +1,11 @@
+import 'package:aura_health_companion/ui/screens/services/medicine_screen.dart';
 import 'package:flutter/material.dart';
 
 class ServicesScreen extends StatelessWidget {
   const ServicesScreen({super.key});
 
   static const List<Map<String, dynamic>> services = [
-    {"title": "Watch Data", "icon": Icons.watch, "route": "/watch", "color": Colors.blue},
+    {"title": "Watch Data", "icon": Icons.watch, "route": "/watch", "color": Color.fromARGB(255, 0, 21, 139)},
     {"title": "Medicine", "icon": Icons.medication, "route": "/medicine", "color": Colors.red},
     {"title": "Mental Health", "icon": Icons.psychology, "route": "/mental_health", "color": Colors.purple},
     {"title": "Nutrition & Diet", "icon": Icons.restaurant, "route": "/nutrition", "color": Colors.orange},
@@ -18,6 +19,19 @@ class ServicesScreen extends StatelessWidget {
     {"title": "Order Medicine", "icon": Icons.local_pharmacy, "route": "/order_medicine", "color": Colors.deepOrange},
   ];
 
+  void _navigateToService(BuildContext context, String route) {
+    if (route == '/medicine') {
+      // Navigate to MedicineScreen directly
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => MedicineScreen()),
+      );
+    } else {
+      // For other routes, use the named navigation as before
+      Navigator.pushNamed(context, route);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -28,7 +42,6 @@ class ServicesScreen extends StatelessWidget {
         ),
         centerTitle: true,
         flexibleSpace: Container(
-          
           decoration: const BoxDecoration(
             borderRadius: BorderRadius.only(
               bottomLeft: Radius.circular(30),
@@ -52,7 +65,7 @@ class ServicesScreen extends StatelessWidget {
           mainAxisSpacing: 12,
           children: services.map((service) {
             return GestureDetector(
-              onTap: () => Navigator.pushNamed(context, service['route']),
+              onTap: () => _navigateToService(context, service['route']),
               child: Card(
                 elevation: 4,
                 shape: RoundedRectangleBorder(
