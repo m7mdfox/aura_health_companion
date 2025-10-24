@@ -32,7 +32,7 @@ ios/ServiceDefinitions.json
 # =========================
 aura_server/node_modules/
 aura_server/package-lock.json
-aura_server/.env
+# aura_server/.env
 aura_server/debug.log
 aura_server/npm-debug.log*
 aura_server/yarn-debug.log*
@@ -61,12 +61,12 @@ Thumbs.db
 # =========================
 # Miscellaneous
 # =========================
-.env
-.env.*
+# .env
+# .env.*
 profile.json
 
 
 # Email credentials
-.env
-*.env.local
-*.env.*.local
+# .env
+# *.env.local
+# *.env.*.local
