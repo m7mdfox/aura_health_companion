@@ -57,6 +57,7 @@ Thumbs.db
 *.iml
 *.ipr
 *.iws
+aura_server/assets/interactions.json
 
 # =========================
 # Miscellaneous
