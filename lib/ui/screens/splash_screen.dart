@@ -81,11 +81,12 @@ class _SplashScreenState extends State<SplashScreen>
   void _startAnimationSequence() async {
     await Future.delayed(const Duration(milliseconds: 600));
     setState(() => _showProgress = true);
+    await AuthService.init(); // Load stored session
     _simulateLoading();
   }
 
   void _simulateLoading() {
-    Timer.periodic(const Duration(milliseconds: 50), (timer) {
+    Timer.periodic(const Duration(milliseconds: 50), (timer) async {
       setState(() {
         _progress += 0.02;
         if (_progress >= 1.0) {
@@ -106,7 +107,12 @@ class _SplashScreenState extends State<SplashScreen>
     }
     if (!mounted) return;
 
+    // Check if user is logged in or validate token
     final isLoggedIn = AuthService.isLoggedIn;
+    // Optional: Validate token with backend
+    // final isTokenValid = await AuthService.validateToken();
+    // final isLoggedIn = AuthService.isLoggedIn && isTokenValid;
+
     if (!mounted) return;
 
     await Navigator.of(context).pushReplacement(
