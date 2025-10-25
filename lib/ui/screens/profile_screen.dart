@@ -25,7 +25,7 @@ class ProfileScreen extends StatelessWidget {
       ),
       body: const Center(
         child: Text(
-          'Profile Screennnnnnnnnnnnn',
+          'Profile Screennnnnnnnnaaaaaaaaannnn',
           style: TextStyle(fontSize: 24),
         ),
       ),
