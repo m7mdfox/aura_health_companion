@@ -1,6 +1,6 @@
 import 'package:aura_health_companion/data/auth_service.dart';
 import 'package:aura_health_companion/logic/auth_controller.dart';
-import 'package:aura_health_companion/ui/screens/chatbot_screen.dart';
+import 'package:aura_health_companion/ui/screens/chatbot/chatbot_screen.dart';
 import 'package:aura_health_companion/ui/screens/login_screen.dart';
 import 'package:aura_health_companion/ui/screens/profile_screen.dart';
 import 'package:aura_health_companion/ui/screens/services_screen.dart';
@@ -321,15 +321,20 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  List<Widget> _screens(String userName) => [
-        _buildHomeScreen(userName),
-        const ServicesScreen(),
-        const ChatbotScreen(),
-        const ProfileScreen(),
-      ];
+ // في قائمة الشاشات داخل _screens
+List<Widget> _screens(String userName) => [
+  _buildHomeScreen(userName),
+  const ServicesScreen(),
+  ChatbotScreen(
+    key: const ValueKey("chatbot_screen"),
+    userName: userName, // تمرير الاسم
+  ),
+  const ProfileScreen(),
+];
 
   @override
   Widget build(BuildContext context) {
+
     final authController = Provider.of<AuthController>(context);
     final userName = AuthService.profile?['full_name'] ?? 'Guest';
     return Scaffold(
