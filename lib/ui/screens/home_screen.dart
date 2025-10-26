@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:aura_health_companion/data/auth_service.dart';
+import 'package:aura_health_companion/data/vital_simulator.dart';
 import 'package:aura_health_companion/logic/auth_controller.dart';
 import 'package:aura_health_companion/ui/screens/chatbot/chatbot_screen.dart';
 import 'package:aura_health_companion/ui/screens/login_screen.dart';
@@ -20,6 +22,98 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  final VitalSimulator _vitalSimulator = VitalSimulator();
+  Timer? _refreshTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    // Refresh the UI every 20 seconds to ensure we see the updates
+    _refreshTimer = Timer.periodic(const Duration(seconds: 20), (_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    _vitalSimulator.dispose();
+    super.dispose();
+  }
+
+  Widget _buildVitalStats() {
+    return StreamBuilder<Map<String, dynamic>>(
+      stream: _vitalSimulator.simulateVitals(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final vitals = snapshot.data!;
+        return Column(
+          children: [
+            GridView.count(
+              physics: const NeverScrollableScrollPhysics(),
+              shrinkWrap: true,
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 1.3,
+              children: [
+                _buildStatCard(
+                  "Heart Rate",
+                  vitals['heartRate']?.toString() ?? "0",
+                  "bpm",
+                  const Color(0xFFF9FAFB),
+                  icon: Ionicons.heart,
+                  iconColor: const Color(0xFFEF4444),
+                ),
+                _buildStatCard(
+                  "Calories",
+                  vitals['caloriesBurnt']?.toString() ?? "0",
+                  "kcal",
+                  const Color(0xFF0F1120),
+                  textColor: Colors.white,
+                  icon: Ionicons.flame,
+                  iconColor: const Color(0xFFFF5733),
+                ),
+                _buildStatCard(
+                  "Steps",
+                  vitals['steps']?.toString() ?? "0",
+                  "steps",
+                  const Color(0xFF0F1120),
+                  textColor: Colors.white,
+                  icon: Ionicons.footsteps,
+                  iconColor: const Color(0xFF60A5FA),
+                ),
+                _buildStatCard(
+                  "Weight",
+                  "89.5",
+                  "lbs",
+                  const Color(0xFFF9FAFB),
+                  icon: Ionicons.scale,
+                  iconColor: const Color(0xFF10B981),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _buildStatCard(
+              "Wellness Score",
+              "Good",
+              "You're healthier than 95% people",
+              const Color(0xFF0F1120),
+              textColor: Colors.white,
+              isLarge: true,
+              icon: Ionicons.star,
+              iconColor: const Color(0xFFFBBF24),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   Widget _buildStatCard(String title, String value, String unit, Color bgColor,
       {Color textColor = Colors.black, bool isLarge = false, required IconData icon, required Color iconColor}) {
@@ -261,60 +355,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            GridView.count(
-              physics: const NeverScrollableScrollPhysics(),
-              shrinkWrap: true,
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 1.3,
-              children: [
-                _buildStatCard(
-                  "Calories",
-                  "620.68",
-                  "kcal",
-                  const Color(0xFF0F1120),
-                  textColor: Colors.white,
-                  icon: Ionicons.flame,
-                  iconColor: const Color(0xFFFF5733),
-                ),
-                _buildStatCard(
-                  "Heart Rate",
-                  "72",
-                  "bpm",
-                  const Color(0xFFF9FAFB),
-                  icon: Ionicons.heart,
-                  iconColor: const Color(0xFFEF4444),
-                ),
-                _buildStatCard(
-                  "Weight",
-                  "89.5",
-                  "lbs",
-                  const Color(0xFFF9FAFB),
-                  icon: Ionicons.scale,
-                  iconColor: const Color(0xFF10B981),
-                ),
-                _buildStatCard(
-                  "Steps",
-                  "5,423",
-                  "steps",
-                  const Color(0xFF0F1120),
-                  textColor: Colors.white,
-                  icon: Ionicons.footsteps,
-                  iconColor: const Color(0xFF60A5FA),
-                ),
-                _buildStatCard(
-                  "Wellness Score",
-                  "Good",
-                  "You’re healthier than 95% people",
-                  const Color(0xFF0F1120),
-                  textColor: Colors.white,
-                  isLarge: true,
-                  icon: Ionicons.star,
-                  iconColor: const Color(0xFFFBBF24),
-                ),
-              ],
-            ),
+            _buildVitalStats(),
           ],
         ),
       ),
