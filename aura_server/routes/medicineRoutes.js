@@ -1,6 +1,6 @@
 import express from "express";
 import UserMedicine from "../models/userMedicine.js";
-import MedicineDoseTime from "../models/medicineDoseTime.js"; // Import the MedicineDoseTime model
+import MedicineDoseTime from "../models/medicineDoseTime.js";
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import fs from "fs";
@@ -87,8 +87,15 @@ const checkDrugInteractions = (newMedicine, existingMedicines) => {
   return conflicts;
 };
 
+// Test route to confirm medicine routes are loaded
+router.get("/test", (req, res) => {
+  console.log("Medicine test route hit");
+  res.status(200).json({ message: "Medicine routes are active" });
+});
+
 // Get user's medicines
 router.get("/my-medicines", authMiddleware, async (req, res) => {
+  console.log("My-medicines route hit");
   try {
     console.log("Fetching medicines for user:", req.user.auth_id);
     const medicines = await UserMedicine.find({ user_id: req.user.auth_id });
@@ -121,6 +128,7 @@ router.get("/my-medicines", authMiddleware, async (req, res) => {
 
 // Add a new medicine with conflict check
 router.post("/add-medicine", authMiddleware, async (req, res) => {
+  console.log("Add-medicine route hit");
   try {
     const {
       trade_name,
@@ -207,6 +215,7 @@ router.post("/add-medicine", authMiddleware, async (req, res) => {
 
 // Update medicine quantity and log dose time
 router.put("/update-quantity", authMiddleware, async (req, res) => {
+  console.log("Update-quantity route hit:", req.body);
   try {
     const { medicineId, quantity } = req.body;
 
@@ -245,7 +254,7 @@ router.put("/update-quantity", authMiddleware, async (req, res) => {
     // Log dose time in MedicineDoseTime
     const doseTime = new MedicineDoseTime({
       medicine_id: medicineId,
-      dose_time: new Date().toISOString(), // Store current timestamp
+      dose_time: new Date().toISOString(),
     });
     await doseTime.save();
 
@@ -272,8 +281,43 @@ router.put("/update-quantity", authMiddleware, async (req, res) => {
   }
 });
 
+// Delete a medicine
+router.delete("/delete/:medicineId", authMiddleware, async (req, res) => {
+  console.log("Delete-medicine route hit:", req.params);
+  try {
+    const { medicineId } = req.params;
+
+    // Validate medicineId format
+    if (!mongoose.Types.ObjectId.isValid(medicineId)) {
+      return res.status(400).json({ error: "Invalid medicineId format" });
+    }
+
+    // Delete medicine if it belongs to the user
+    const medicine = await UserMedicine.findOneAndDelete({
+      _id: medicineId,
+      user_id: req.user.auth_id,
+    });
+
+    if (!medicine) {
+      return res
+        .status(404)
+        .json({ error: "Medicine not found or does not belong to user" });
+    }
+
+    // Optionally delete related dose times
+    await MedicineDoseTime.deleteMany({ medicine_id: medicineId });
+
+    console.log(`Medicine ${medicineId} deleted successfully`);
+    res.status(200).json({ message: "Medicine deleted successfully" });
+  } catch (e) {
+    console.error("Delete medicine error:", e);
+    res.status(500).json({ error: `Failed to delete medicine: ${e.message}` });
+  }
+});
+
 // Check interactions between two medicines (not limited to user's medicines)
 router.post("/check-interaction", async (req, res) => {
+  console.log("Check-interaction route hit");
   try {
     let { medicine1, medicine2 } = req.body;
 
