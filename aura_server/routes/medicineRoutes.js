@@ -1,5 +1,6 @@
 import express from "express";
 import UserMedicine from "../models/userMedicine.js";
+import MedicineDoseTime from "../models/medicineDoseTime.js"; // Import the MedicineDoseTime model
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import fs from "fs";
@@ -12,12 +13,19 @@ const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret";
 console.log("Current working directory:", process.cwd());
 
 // Load interactions JSON file
-const interactionsFilePath = path.join(process.cwd(), "assets", "interactions.json");
+const interactionsFilePath = path.join(
+  process.cwd(),
+  "assets",
+  "interactions.json"
+);
 let interactionsData = [];
 try {
   const fileContent = fs.readFileSync(interactionsFilePath, "utf8");
   interactionsData = JSON.parse(fileContent);
-  console.log("✅ Interactions JSON loaded successfully. Number of entries:", interactionsData.length);
+  console.log(
+    "✅ Interactions JSON loaded successfully. Number of entries:",
+    interactionsData.length
+  );
   console.log("Sample entry:", interactionsData[0]);
 } catch (err) {
   console.error("❌ Error loading interactions JSON:", err.message);
@@ -54,7 +62,8 @@ const checkDrugInteractions = (newMedicine, existingMedicines) => {
       const brand1Lower = i.brand1.toLowerCase().trim();
       const brand2Lower = i.brand2.toLowerCase().trim();
       const match =
-        (brand1Lower === newMedicineLower && brand2Lower === existingMedLower) ||
+        (brand1Lower === newMedicineLower &&
+          brand2Lower === existingMedLower) ||
         (brand1Lower === existingMedLower && brand2Lower === newMedicineLower);
       if (match) {
         console.log("Interaction match found in checkDrugInteractions:", {
@@ -62,7 +71,7 @@ const checkDrugInteractions = (newMedicine, existingMedicines) => {
           brand2: i.brand2,
           newMedicine: newMedicine.trade_name,
           existingMed: existingMed.trade_name,
-          InteractionDescription: i["Interaction Description"]
+          InteractionDescription: i["Interaction Description"],
         });
       }
       return match;
@@ -70,12 +79,45 @@ const checkDrugInteractions = (newMedicine, existingMedicines) => {
     if (interaction) {
       conflicts.push({
         conflictingMedicine: existingMed.trade_name,
-        description: interaction["Interaction Description"] || "No description available"
+        description:
+          interaction["Interaction Description"] || "No description available",
       });
     }
   }
   return conflicts;
 };
+
+// Get user's medicines
+router.get("/my-medicines", authMiddleware, async (req, res) => {
+  try {
+    console.log("Fetching medicines for user:", req.user.auth_id);
+    const medicines = await UserMedicine.find({ user_id: req.user.auth_id });
+
+    if (!medicines || medicines.length === 0) {
+      return res.status(200).json({
+        message: "No medicines found for this user",
+        medicines: [],
+      });
+    }
+
+    res.status(200).json({
+      message: "Medicines retrieved successfully",
+      medicines: medicines.map((med) => ({
+        _id: med._id,
+        trade_name: med.trade_name,
+        concentration: med.concentration,
+        dose: med.dose,
+        frequency: med.frequency,
+        duration_days: med.duration_days,
+        quantity: med.quantity,
+        active_ingredient: med.active_ingredient,
+      })),
+    });
+  } catch (e) {
+    console.error("Get medicines error:", e);
+    res.status(500).json({ error: `Failed to fetch medicines: ${e.message}` });
+  }
+});
 
 // Add a new medicine with conflict check
 router.post("/add-medicine", authMiddleware, async (req, res) => {
@@ -90,29 +132,42 @@ router.post("/add-medicine", authMiddleware, async (req, res) => {
       active_ingredient,
     } = req.body;
 
-    console.log("Received add-medicine request:", { trade_name, user_id: req.user.auth_id });
+    console.log("Received add-medicine request:", {
+      trade_name,
+      user_id: req.user.auth_id,
+    });
 
     // Validate required fields
-    if (!trade_name || !dose || !frequency || !duration_days || !active_ingredient) {
+    if (
+      !trade_name ||
+      !dose ||
+      !frequency ||
+      !duration_days ||
+      !active_ingredient
+    ) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
     // Fetch user's existing medicines
-    const existingMedicines = await UserMedicine.find({ user_id: req.user.auth_id });
+    const existingMedicines = await UserMedicine.find({
+      user_id: req.user.auth_id,
+    });
 
     // Check for interactions
     const newMedicine = { trade_name };
     const conflicts = checkDrugInteractions(newMedicine, existingMedicines);
 
     if (interactionsData.length === 0) {
-      console.warn("Adding medicine without interaction check due to missing interactions data");
+      console.warn(
+        "Adding medicine without interaction check due to missing interactions data"
+      );
     }
 
     if (conflicts.length > 0) {
       console.log("Conflicts found for:", trade_name, conflicts);
       return res.status(409).json({
         error: "Medicine conflicts with existing medicines",
-        conflicts
+        conflicts,
       });
     }
 
@@ -150,16 +205,88 @@ router.post("/add-medicine", authMiddleware, async (req, res) => {
   }
 });
 
+// Update medicine quantity and log dose time
+router.put("/update-quantity", authMiddleware, async (req, res) => {
+  try {
+    const { medicineId, quantity } = req.body;
+
+    // Validate input
+    if (!medicineId || quantity == null) {
+      return res.status(400).json({ error: "Missing medicineId or quantity" });
+    }
+
+    // Validate medicineId format
+    if (!mongoose.Types.ObjectId.isValid(medicineId)) {
+      return res.status(400).json({ error: "Invalid medicineId format" });
+    }
+
+    // Check if medicine exists and belongs to the user
+    const medicine = await UserMedicine.findOne({
+      _id: medicineId,
+      user_id: req.user.auth_id,
+    });
+
+    if (!medicine) {
+      return res
+        .status(404)
+        .json({ error: "Medicine not found or does not belong to user" });
+    }
+
+    // Prevent negative quantity
+    if (quantity < 0) {
+      return res.status(400).json({ error: "Quantity cannot be negative" });
+    }
+
+    // Update quantity
+    medicine.quantity = quantity;
+    medicine.updated_at = Date.now();
+    await medicine.save();
+
+    // Log dose time in MedicineDoseTime
+    const doseTime = new MedicineDoseTime({
+      medicine_id: medicineId,
+      dose_time: new Date().toISOString(), // Store current timestamp
+    });
+    await doseTime.save();
+
+    console.log(
+      `Quantity updated for medicine ${medicineId} to ${quantity}, dose time logged`
+    );
+
+    res.status(200).json({
+      message: "Quantity updated successfully",
+      medicine: {
+        _id: medicine._id,
+        trade_name: medicine.trade_name,
+        concentration: medicine.concentration,
+        dose: medicine.dose,
+        frequency: medicine.frequency,
+        duration_days: medicine.duration_days,
+        quantity: medicine.quantity,
+        active_ingredient: medicine.active_ingredient,
+      },
+    });
+  } catch (e) {
+    console.error("Update quantity error:", e);
+    res.status(500).json({ error: `Failed to update quantity: ${e.message}` });
+  }
+});
+
 // Check interactions between two medicines (not limited to user's medicines)
 router.post("/check-interaction", async (req, res) => {
   try {
     let { medicine1, medicine2 } = req.body;
 
-    console.log("Received interaction check request:", { medicine1, medicine2 });
+    console.log("Received interaction check request:", {
+      medicine1,
+      medicine2,
+    });
 
     // Validate and trim input
     if (!medicine1 || !medicine2) {
-      return res.status(400).json({ error: "Both medicine names are required" });
+      return res
+        .status(400)
+        .json({ error: "Both medicine names are required" });
     }
 
     medicine1 = medicine1.trim().toLowerCase();
@@ -171,7 +298,7 @@ router.post("/check-interaction", async (req, res) => {
       return res.status(500).json({
         interaction: false,
         description: "",
-        error: "Interaction data not available. Please contact support."
+        error: "Interaction data not available. Please contact support.",
       });
     }
 
@@ -192,7 +319,7 @@ router.post("/check-interaction", async (req, res) => {
           brand2: i.brand2,
           medicine1,
           medicine2,
-          InteractionDescription: i["Interaction Description"]
+          InteractionDescription: i["Interaction Description"],
         });
       }
       return match;
@@ -202,21 +329,22 @@ router.post("/check-interaction", async (req, res) => {
       console.log("Interaction confirmed:", interaction);
       return res.status(200).json({
         interaction: true,
-        description: interaction["Interaction Description"] || "No description available"
+        description:
+          interaction["Interaction Description"] || "No description available",
       });
     }
 
     console.log("No interaction found between:", medicine1, medicine2);
     return res.status(200).json({
       interaction: false,
-      description: ""
+      description: "",
     });
   } catch (e) {
     console.error("Check interaction error:", e);
     return res.status(500).json({
       interaction: false,
       description: "",
-      error: `Failed to check interaction: ${e.message}`
+      error: `Failed to check interaction: ${e.message}`,
     });
   }
 });

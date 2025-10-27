@@ -1,5 +1,7 @@
 import 'package:aura_health_companion/ui/screens/services/medicine_screen.dart';
 import 'package:flutter/material.dart';
+// import 'package:aura_health_companion/ui/screens/services/medicine_screen.dart';
+
 
 class ServicesScreen extends StatelessWidget {
   const ServicesScreen({super.key});
@@ -24,7 +26,7 @@ class ServicesScreen extends StatelessWidget {
       // Navigate to MedicineScreen directly
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => MedicineScreen()),
+        MaterialPageRoute(builder: (context) => MedicineScreenn()),
       );
     } else {
       // For other routes, use the named navigation as before

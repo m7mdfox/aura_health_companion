@@ -55,14 +55,14 @@ class ErrorAnimation extends StatelessWidget {
               },
             ),
             const SizedBox(height: 16),
-            Text(
-              'Login Failed',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
-            ),
+            // Text(
+            //   'Login Failed',
+            //   style: const TextStyle(
+            //     fontSize: 18,
+            //     fontWeight: FontWeight.bold,
+            //   ),
+            //   textAlign: TextAlign.center,
+            // ),
             const SizedBox(height: 8),
             Text(
               message,
