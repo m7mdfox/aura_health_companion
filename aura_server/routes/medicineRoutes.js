@@ -118,6 +118,7 @@ router.get("/my-medicines", authMiddleware, async (req, res) => {
         duration_days: med.duration_days,
         quantity: med.quantity,
         active_ingredient: med.active_ingredient,
+        dose_times: med.dose_times, // +++ ADDED +++
       })),
     });
   } catch (e) {
@@ -137,12 +138,14 @@ router.post("/add-medicine", authMiddleware, async (req, res) => {
       frequency,
       duration_days,
       quantity,
-      active_ingredient,
+      active_ingredient, // This will be undefined or null, which is fine
+      dose_times, // +++ ADDED +++
     } = req.body;
 
     console.log("Received add-medicine request:", {
       trade_name,
       user_id: req.user.auth_id,
+      dose_times,
     });
 
     // Validate required fields
@@ -150,8 +153,8 @@ router.post("/add-medicine", authMiddleware, async (req, res) => {
       !trade_name ||
       !dose ||
       !frequency ||
-      !duration_days ||
-      !active_ingredient
+      !duration_days
+      // --- REMOVED --- !active_ingredient
     ) {
       return res.status(400).json({ error: "Missing required fields" });
     }
@@ -188,7 +191,8 @@ router.post("/add-medicine", authMiddleware, async (req, res) => {
       frequency,
       duration_days,
       quantity,
-      active_ingredient,
+      active_ingredient, // Will be saved as null/undefined if not provided
+      dose_times, // +++ ADDED +++
     });
 
     await medicine.save();
@@ -205,6 +209,7 @@ router.post("/add-medicine", authMiddleware, async (req, res) => {
         duration_days,
         quantity,
         active_ingredient,
+        dose_times: medicine.dose_times, // +++ ADDED +++
       },
     });
   } catch (e) {
@@ -273,6 +278,7 @@ router.put("/update-quantity", authMiddleware, async (req, res) => {
         duration_days: medicine.duration_days,
         quantity: medicine.quantity,
         active_ingredient: medicine.active_ingredient,
+        dose_times: medicine.dose_times, // +++ ADDED +++
       },
     });
   } catch (e) {
