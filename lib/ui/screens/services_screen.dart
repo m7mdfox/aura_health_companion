@@ -1,4 +1,5 @@
 import 'package:aura_health_companion/ui/screens/services/medicine_screen.dart';
+import 'package:aura_health_companion/ui/screens/mental_health/mental_health_home_screen.dart';
 import 'package:flutter/material.dart';
 
 class ServicesScreen extends StatelessWidget {
@@ -21,13 +22,16 @@ class ServicesScreen extends StatelessWidget {
 
   void _navigateToService(BuildContext context, String route) {
     if (route == '/medicine') {
-      // Navigate to MedicineScreen directly
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => MedicineScreen()),
+        MaterialPageRoute(builder: (context) => const MedicineScreen()),
+      );
+    } else if (route == '/mental_health') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const MentalHealthHomeScreen()),
       );
     } else {
-      // For other routes, use the named navigation as before
       Navigator.pushNamed(context, route);
     }
   }
