@@ -30,6 +30,7 @@ ios/ServiceDefinitions.json
 # =========================
 # Node.js / Server (aura_server)
 # =========================
+node_modules/
 aura_server/node_modules/
 aura_server/package-lock.json
 # aura_server/.env
