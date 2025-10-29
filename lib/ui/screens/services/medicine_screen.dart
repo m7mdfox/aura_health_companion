@@ -5,6 +5,7 @@ import 'dart:convert';
 // >>> MAKE SURE THIS LINE IS HERE <<<<<
 import 'package:aura_health_companion/data/auth_service.dart';
 import 'package:aura_health_companion/ui/screens/login_screen.dart';
+import 'package:aura_health_companion/ui/screens/services/gemeni_alternative.dart';
 // import 'package:aura_health_companion/ui/screens/services_screen.dart'; // Uncomment if you use this
 // import 'package:aura_health_companion/ui/widgets/error_animation.dart';
 // import 'package:aura_health_companion/ui/widgets/success_animation.dart';
@@ -16,6 +17,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+
 
 class Medicine {
   final String id;
@@ -316,9 +318,251 @@ class _MedicineDetailsDialogContentState
 }
 
 
+// ... This is the end of _MedicineDetailsDialogContentState
+  // <--- This is the LAST '}' of _MedicineDetailsDialogContentState
+
+
+// 🔽 ADD THIS ENTIRE NEW WIDGET
+/// +++ NEW WIDGET +++
+/// This widget provides a UI for the Gemini AI feature.
+class _GeminiAIDialogContent extends StatefulWidget {
+  final GeminiFeatureService geminiService;
+
+  const _GeminiAIDialogContent({required this.geminiService});
+
+  @override
+  _GeminiAIDialogContentState createState() => _GeminiAIDialogContentState();
+}
+
+class _GeminiAIDialogContentState extends State<_GeminiAIDialogContent> {
+  final _formKey = GlobalKey<FormState>();
+  final _textController = TextEditingController();
+  String? _response;
+  bool _isAiLoading = false;
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    super.dispose();
+  }
+
+ // In _GeminiAIDialogContentState:
+
+// In _GeminiAIDialogContentState:
+
+  Future<void> _askGemini() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (_isAiLoading) return;
+
+    setState(() {
+      _isAiLoading = true;
+      _response = null; // Clear previous response
+    });
+
+    // 🔽 UPDATED PROMPT FOR SPECIFIC FORMAT
+    const String featurePrompt = """
+You are a medicine alternative finder. The user will provide a medicine name.
+Your task is to find ONE common alternative medicine that has the same active ingredient.
+
+You MUST respond ONLY in the exact format required, with no other text, greetings, or disclaimers.
+
+- If responding in English, use this format:
+"the alternative of [User's Medicine Name] is [Alternative Medicine Name]"
+
+- If responding in Arabic, use this format:
+"البديل لـ [User's Medicine Name] هو [Alternative Medicine Name]"
+
+Example (English):
+User's Medicine: "Panadol"
+Your Response:
+"The alternative of Panadol is Tylenol"
+
+Example (Arabic):
+User's Medicine: "بنادول"
+Your Response:
+"البديل لـ بنادول هو تايلينول"
+""";
+    // 🔼
+
+    try {
+      final message = _textController.text.trim();
+      final result = await widget.geminiService.sendMessage(
+        featurePrompt: featurePrompt,
+        message: message,
+      );
+      _response = result;
+    } catch (e) {
+      _response = "⚠️ Oops! An error occurred: $e";
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isAiLoading = false;
+        });
+      }
+    }
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.all(20),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 30,
+              offset: const Offset(0, 20),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Ask Aura AI',
+                    style: GoogleFonts.mulish(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF0D1B4C),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    icon: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        shape: BoxShape.circle,
+                      ),
+                      padding: const EdgeInsets.all(4),
+                      child: const Icon(
+                        Icons.close,
+                        color: Colors.grey,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Get a quick summary of a medication.',
+                style: GoogleFonts.mulish(
+                  color: Colors.grey.shade600,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 24),
+              
+              // Input Form
+              Form(
+                key: _formKey,
+                child: buildEnhancedInputField( // Use the helper function
+                  controller: _textController,
+                  label: 'Enter Medicine Name',
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter a medicine name';
+                    }
+                    return null;
+                  },
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Response Area
+              if (_isAiLoading)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: CircularProgressIndicator(
+                      color: Color(0xFF0D1B4C),
+                    ),
+                  ),
+                ),
+
+              if (_response != null && !_isAiLoading)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade200)
+                  ),
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.3,
+                  ),
+                  child: SingleChildScrollView(
+                    child: Text(
+                      _response!,
+                      style: GoogleFonts.mulish(
+                        color: Colors.black87,
+                        fontSize: 15,
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
+                ),
+              
+              const SizedBox(height: 24),
+
+              // Action Button
+              ElevatedButton(
+                onPressed: _isAiLoading ? null : _askGemini,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0D1B4C),
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 50),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 4,
+                ),
+                child: _isAiLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(
+                        'Ask AI',
+                        style: GoogleFonts.mulish(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
+
+
 
 
 class _MedicineScreenState extends State<MedicineScreenn> {
+
 
   // Add this function inside _MedicineScreenState
 Future<void> _showTestNotification() async {
@@ -344,6 +588,23 @@ Future<void> _showTestNotification() async {
 
 
   final NotificationService _notificationService = NotificationService();
+
+  final GeminiFeatureService _geminiService = GeminiFeatureService();
+  
+  // ... other variables
+  
+  // ...
+  // 🔽 ADD THIS NEW FUNCTION (e.g., after _showEnhancedErrorDialog)
+  void _showGeminiAIDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Don't close on tap outside
+      builder: (context) {
+        // Pass the gemini service instance to the new dialog
+        return _GeminiAIDialogContent(geminiService: _geminiService);
+      },
+    );
+  }
 
   // +++ ADD THIS HELPER +++
   /// Generates a unique, predictable notification ID for a medicine's dose
@@ -1289,7 +1550,7 @@ Future<void> _deleteMedicine(String medicineId, String tradeName) async {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              _buildEnhancedInputField(
+                              buildEnhancedInputField(
                                 controller: _tradeNameController,
                                 label: 'Trade Name',
                                 validator: (value) {
@@ -1300,12 +1561,12 @@ Future<void> _deleteMedicine(String medicineId, String tradeName) async {
                                 },
                               ),
                               const SizedBox(height: 16),
-                              _buildEnhancedInputField(
+                              buildEnhancedInputField(
                                 controller: _concentrationController,
                                 label: 'Concentration (e.g., 500 mg)',
                               ),
                               const SizedBox(height: 16),
-                              _buildEnhancedInputField(
+                              buildEnhancedInputField(
                                 controller: _doseController,
                                 label: 'Dose (e.g., 1 tablet)',
                                 validator: (value) {
@@ -1316,7 +1577,7 @@ Future<void> _deleteMedicine(String medicineId, String tradeName) async {
                                 },
                               ),
                               const SizedBox(height: 16),
-                              _buildEnhancedInputField(
+                              buildEnhancedInputField(
                                 controller: _frequencyController,
                                 label: 'Frequency (times per day)',
                                 keyboardType: TextInputType.number,
@@ -1421,7 +1682,7 @@ Future<void> _deleteMedicine(String medicineId, String tradeName) async {
                                 );
                               }),
                               const SizedBox(height: 16),
-                              _buildEnhancedInputField(
+                              buildEnhancedInputField(
                                 controller: _durationController,
                                 label: 'Duration (days)',
                                 keyboardType: TextInputType.number,
@@ -1436,7 +1697,7 @@ Future<void> _deleteMedicine(String medicineId, String tradeName) async {
                                 },
                               ),
                               const SizedBox(height: 16),
-                              _buildEnhancedInputField(
+                              buildEnhancedInputField(
                                 controller: _quantityController,
                                 label: 'Quantity',
                                 keyboardType: TextInputType.number,
@@ -1598,7 +1859,7 @@ Future<void> _deleteMedicine(String medicineId, String tradeName) async {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _buildEnhancedInputField(
+                      buildEnhancedInputField(
                         controller: _medicine1Controller,
                         label: 'Medicine 1',
                         validator: (value) {
@@ -1609,7 +1870,7 @@ Future<void> _deleteMedicine(String medicineId, String tradeName) async {
                         },
                       ),
                       const SizedBox(height: 16),
-                      _buildEnhancedInputField(
+                      buildEnhancedInputField(
                         controller: _medicine2Controller,
                         label: 'Medicine 2',
                         validator: (value) {
@@ -1748,58 +2009,7 @@ Future<void> _deleteMedicine(String medicineId, String tradeName) async {
   // |                       BUILD WIDGETS                      |
   // +------------------------------------------------------------+
 
-  Widget _buildEnhancedInputField({
-    // ... (This function remains unchanged)
-    required TextEditingController controller,
-    required String label,
-    TextInputType? keyboardType,
-    String? Function(String?)? validator,
-    void Function(String)? onChanged,
-  }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      validator: validator,
-      onChanged: onChanged,
-      style: GoogleFonts.mulish(
-        color: const Color(0xFF0D1B4C),
-        fontWeight: FontWeight.w500,
-      ),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: GoogleFonts.mulish(
-          color: Colors.grey.shade600,
-          fontWeight: FontWeight.w500,
-        ),
-        filled: true,
-        fillColor: Colors.grey.shade50,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade300, width: 1.5),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF0D1B4C), width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.red.shade400, width: 1.5),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.red.shade400, width: 2),
-        ),
-        errorStyle: GoogleFonts.mulish(
-          color: Colors.red.shade400,
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
-
+  
   void _showActionBottomSheet() {
     // ... (This function remains unchanged)
     showModalBottomSheet(
@@ -1859,6 +2069,17 @@ Future<void> _deleteMedicine(String medicineId, String tradeName) async {
                       },
                     ),
                     const SizedBox(height: 16),
+                    // 🔽 ADD THESE 3 LINES
+                      _buildActionButton(
+                        icon: Icons.auto_awesome, // AI icon
+                        text: 'Ask Aura AI',
+                        onTap: () {
+                          Navigator.of(context).pop(); // Close bottom sheet
+                          _showGeminiAIDialog(); // Open new AI dialog
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      // 🔼
                     _buildActionButton(
                       icon: Icons.mediation_outlined,
                       text: 'Check Interaction',
@@ -2372,3 +2593,105 @@ Future<void> _deleteMedicine(String medicineId, String tradeName) async {
     );
   }
 }
+Widget buildEnhancedInputField({
+
+    // ... (This function remains unchanged)
+
+    required TextEditingController controller,
+
+    required String label,
+
+    TextInputType? keyboardType,
+
+    String? Function(String?)? validator,
+
+    void Function(String)? onChanged,
+
+  }) {
+
+    return TextFormField(
+
+      controller: controller,
+
+      keyboardType: keyboardType,
+
+      validator: validator,
+
+      onChanged: onChanged,
+
+      style: GoogleFonts.mulish(
+
+        color: const Color(0xFF0D1B4C),
+
+        fontWeight: FontWeight.w500,
+
+      ),
+
+      decoration: InputDecoration(
+
+        labelText: label,
+
+        labelStyle: GoogleFonts.mulish(
+
+          color: Colors.grey.shade600,
+
+          fontWeight: FontWeight.w500,
+
+        ),
+
+        filled: true,
+
+        fillColor: Colors.grey.shade50,
+
+        contentPadding:
+
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+
+        enabledBorder: OutlineInputBorder(
+
+          borderRadius: BorderRadius.circular(12),
+
+          borderSide: BorderSide(color: Colors.grey.shade300, width: 1.5),
+
+        ),
+
+        focusedBorder: OutlineInputBorder(
+
+          borderRadius: BorderRadius.circular(12),
+
+          borderSide: const BorderSide(color: Color(0xFF0D1B4C), width: 2),
+
+        ),
+
+        errorBorder: OutlineInputBorder(
+
+          borderRadius: BorderRadius.circular(12),
+
+          borderSide: BorderSide(color: Colors.red.shade400, width: 1.5),
+
+        ),
+
+        focusedErrorBorder: OutlineInputBorder(
+
+          borderRadius: BorderRadius.circular(12),
+
+          borderSide: BorderSide(color: Colors.red.shade400, width: 2),
+
+        ),
+
+        errorStyle: GoogleFonts.mulish(
+
+          color: Colors.red.shade400,
+
+          fontSize: 12,
+
+          fontWeight: FontWeight.w500,
+
+        ),
+
+      ),
+
+    );
+
+  }
+
