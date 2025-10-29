@@ -1,10 +1,16 @@
-// lib/main.dart
 import 'package:aura_health_companion/logic/auth_controller.dart';
+import 'package:aura_health_companion/ui/screens/services/notification_service.dart';
 import 'package:aura_health_companion/ui/screens/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-void main() {
+
+
+Future<void> main() async {
+  // Add these two lines to initialize services before the app starts
+  WidgetsFlutterBinding.ensureInitialized();
+  await NotificationService().init();
+
   runApp(const MainApp());
 }
 

@@ -1,10 +1,13 @@
 import 'package:aura_health_companion/data/auth_service.dart';
 import 'package:aura_health_companion/ui/screens/home_screen.dart';
 import 'package:aura_health_companion/ui/screens/login_screen.dart';
+import 'package:aura_health_companion/ui/screens/services/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';
 import 'dart:math' as math;
+
+
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -82,6 +85,11 @@ class _SplashScreenState extends State<SplashScreen>
     await Future.delayed(const Duration(milliseconds: 600));
     setState(() => _showProgress = true);
     await AuthService.init(); // Load stored session
+
+    // +++ ADD THIS LINE +++
+    // Request notification permissions while the splash screen is visible
+    await NotificationService().requestPermissions();
+
     _simulateLoading();
   }
 
@@ -342,3 +350,4 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 }
+

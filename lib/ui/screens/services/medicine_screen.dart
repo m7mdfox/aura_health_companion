@@ -1,11 +1,18 @@
 import 'dart:async';
 import 'dart:convert';
+// >>> MAKE SURE THIS LINE IS HERE <<<
+// import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+// >>> MAKE SURE THIS LINE IS HERE <<<<<
 import 'package:aura_health_companion/data/auth_service.dart';
 import 'package:aura_health_companion/ui/screens/login_screen.dart';
 // import 'package:aura_health_companion/ui/screens/services_screen.dart'; // Uncomment if you use this
-import 'package:aura_health_companion/ui/widgets/error_animation.dart';
-import 'package:aura_health_companion/ui/widgets/success_animation.dart';
+// import 'package:aura_health_companion/ui/widgets/error_animation.dart';
+// import 'package:aura_health_companion/ui/widgets/success_animation.dart';
+import 'package:aura_health_companion/ui/screens/services/notification_service.dart'; 
+// import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+ // We need this for the `Time` object
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -312,6 +319,89 @@ class _MedicineDetailsDialogContentState
 
 
 class _MedicineScreenState extends State<MedicineScreenn> {
+
+  // Add this function inside _MedicineScreenState
+Future<void> _showTestNotification() async {
+  const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+    'medicine_channel_id', // Use the same channel ID
+    'Medicine Reminders',
+    channelDescription: 'Channel for testing notifications',
+    importance: Importance.max,
+    priority: Priority.high,
+  );
+  const DarwinNotificationDetails iosDetails = DarwinNotificationDetails();
+  const NotificationDetails platformDetails = NotificationDetails(
+    android: androidDetails,
+    iOS: iosDetails,
+  );
+  await _notificationService.flutterLocalNotificationsPlugin.show(
+    999, // Unique ID for test
+    'Test Notification',
+    'If you see this, the plugin is working!',
+    platformDetails,
+  );
+}
+
+
+  final NotificationService _notificationService = NotificationService();
+
+  // +++ ADD THIS HELPER +++
+  /// Generates a unique, predictable notification ID for a medicine's dose
+  int _generateNotificationId(String medicineId, int doseIndex) {
+    // Use the first 8 chars of the Mongo ID to create a unique int
+    final int medIdHash = int.parse(medicineId.substring(0, 8), radix: 16);
+    return medIdHash + doseIndex;
+  }
+
+Future<void> _scheduleAllNotifications(Medicine medicine) async {
+    for (int i = 0; i < medicine.doseTimes.length; i++) {
+      final timeStr = medicine.doseTimes[i];
+      try {
+        final parts = timeStr.split(':');
+        final int? hour = int.tryParse(parts[0]);
+        final int? minute = int.tryParse(parts[1]);
+
+        if (hour != null && minute != null) {
+          final int notificationId = _generateNotificationId(medicine.id, i);
+
+          // Corrected call without 'time: null'
+          await _notificationService.scheduleDailyNotification(
+            id: notificationId,
+            title: 'Time for your dose!',
+            body:
+                'It\'s time to take your ${medicine.dose} of ${medicine.tradeName}.',
+            hour: hour,
+            minute: minute,
+          );
+
+          print('Scheduled notification $notificationId for $timeStr');
+        } else {
+          print(
+              'Error parsing time string, hour or minute was null: $timeStr');
+        }
+      } catch (e) {
+        print('Error scheduling notification for $timeStr: $e');
+      }
+    }
+  }
+  
+  // +++ ADD THIS FUNCTION +++
+  Future<void> _cancelAllNotificationsForMedicine(String medicineId, int doseCount) async {
+    for (int i = 0; i < doseCount; i++) {
+      try {
+        final int notificationId = _generateNotificationId(medicineId, i);
+        await _notificationService.cancelNotification(notificationId);
+        print('Cancelled notification $notificationId');
+      } catch(e) {
+        print('Error cancelling notification: $e');
+      }
+    }
+  }
+
+
+
+
+
   final _addMedicineFormKey = GlobalKey<FormState>();
   final _checkInteractionFormKey = GlobalKey<FormState>();
   final _tradeNameController = TextEditingController();
@@ -580,6 +670,13 @@ DateTime? _getNextDoseTime(List<String> doseTimes) {
           // 2. NOW, close the "Add Medicine" dialog
           Navigator.of(context).pop();
 
+          // +++ ADD THIS SECTION +++
+        // We need the newly created medicine to get its ID
+        final newMedicineData = jsonDecode(response.body)['medicine'];
+        final newMedicine = Medicine.fromJson(newMedicineData);
+        _scheduleAllNotifications(newMedicine); // Schedule notifications
+        // ++++++++++++++++++++++++
+
           // 3. Show the "Success" dialog
           await _showEnhancedSuccessDialog(
             context: context,
@@ -782,6 +879,16 @@ DateTime? _getNextDoseTime(List<String> doseTimes) {
   }
 
 Future<void> _deleteMedicine(String medicineId, String tradeName) async {
+
+  // +++ ADD THIS +++
+  // Find the medicine in the list to know its dose count
+  Medicine? medToDelete;
+  try {
+    medToDelete = _userMedicines.firstWhere((med) => med.id == medicineId);
+  } catch (e) {
+    medToDelete = null;
+  }
+  // ++++++++++++++++
     setState(() => _isLoading = true);
     try {
       final token = AuthService.token;
@@ -802,6 +909,12 @@ Future<void> _deleteMedicine(String medicineId, String tradeName) async {
           'Delete medicine response: ${response.statusCode} ${response.body}');
       if (response.statusCode == 200) {
         if (mounted) {
+          // +++ ADD THIS +++
+        if (medToDelete != null) {
+          await _cancelAllNotificationsForMedicine(
+              medToDelete.id, medToDelete.doseTimes.length);
+        }
+        // ++++++++++++++++
           // +++ FIX +++
           // Use the correct, standardized success dialog
           // This dialog doesn't have a race condition.
@@ -2231,11 +2344,17 @@ Future<void> _deleteMedicine(String medicineId, String tradeName) async {
                             ),
                 ),
                 const SizedBox(height: 80),
+                ElevatedButton(
+  onPressed: _showTestNotification,
+  child: Text('Test Immediate Notification'),
+),                const SizedBox(height: 20),
               ],
             ),
           ),
         ],
       ),
+
+      
       floatingActionButton: Container(
         margin: const EdgeInsets.only(bottom: 80),
         child: FloatingActionButton(
