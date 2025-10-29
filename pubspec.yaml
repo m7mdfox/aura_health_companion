@@ -39,4 +39,5 @@ flutter:
   assets:
     - assets/animations/
     - assets/
+    - assets/vitals.json
 

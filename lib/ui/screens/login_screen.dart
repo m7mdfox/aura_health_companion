@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -20,6 +21,14 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+
+  // دالة تمسح بيانات المود المحلية (للحساب القديم)
+  Future<void> _clearLocalMoodData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('last_mood_date');
+    await prefs.remove('today_mood');
+    await prefs.remove('last_mood_user_id');
+  }
 
   void _navigateToSignUp() {
     Navigator.of(context).pushReplacement(
@@ -49,6 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       body: Stack(
         children: [
+          // Background Pattern
           Positioned(
             top: 0,
             right: 0,
@@ -56,7 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
               opacity: 0.3,
               child: Image.asset(
                 'assets/PatternLogin.png',
-                width: screenWidth * 1,
+                width: screenWidth,
                 height: screenHeight * 0.5,
                 fit: BoxFit.cover,
               ),
@@ -95,6 +105,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 30),
+
+                    // Login / Sign Up Toggle
                     Container(
                       width: 327,
                       height: 36,
@@ -127,7 +139,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   borderRadius: BorderRadius.circular(7),
                                 ),
                               ),
-                              onPressed: () {},
+                              onPressed: () {}, // Current Page
                               child: Text(
                                 'Login',
                                 style: TextStyle(
@@ -163,13 +175,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 20),
+
+                    // Email Field
                     SizedBox(
                       width: 327,
-                      height: 69,
                       child: TextFormField(
                         controller: _emailController,
-                        style:
-                            const TextStyle(fontSize: 16, color: Colors.black),
+                        keyboardType: TextInputType.emailAddress,
+                        style: const TextStyle(fontSize: 16, color: Colors.black),
                         decoration: InputDecoration(
                           labelText: 'Email',
                           labelStyle: const TextStyle(color: Colors.grey),
@@ -193,17 +206,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           errorBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: Colors.red,
-                              width: 2,
-                            ),
+                            borderSide: const BorderSide(color: Colors.red, width: 2),
                           ),
                           focusedErrorBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: Colors.red,
-                              width: 2,
-                            ),
+                            borderSide: const BorderSide(color: Colors.red, width: 2),
                           ),
                           errorStyle: TextStyle(
                             color: Colors.red,
@@ -226,14 +233,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
+
+                    // Password Field
                     SizedBox(
                       width: 327,
-                      height: 69,
                       child: TextFormField(
                         controller: _passwordController,
                         obscureText: true,
-                        style:
-                            const TextStyle(fontSize: 16, color: Colors.black),
+                        style: const TextStyle(fontSize: 16, color: Colors.black),
                         decoration: InputDecoration(
                           labelText: 'Password',
                           labelStyle: const TextStyle(color: Colors.grey),
@@ -257,17 +264,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           errorBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: Colors.red,
-                              width: 2,
-                            ),
+                            borderSide: const BorderSide(color: Colors.red, width: 2),
                           ),
                           focusedErrorBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: Colors.red,
-                              width: 2,
-                            ),
+                            borderSide: const BorderSide(color: Colors.red, width: 2),
                           ),
                           errorStyle: TextStyle(
                             color: Colors.red,
@@ -279,11 +280,16 @@ class _LoginScreenState extends State<LoginScreen> {
                           if (value == null || value.isEmpty) {
                             return 'Please enter your password';
                           }
+                          if (value.length < 6) {
+                            return 'Password must be at least 6 characters';
+                          }
                           return null;
                         },
                       ),
                     ),
                     const SizedBox(height: 30),
+
+                    // Login Button
                     SizedBox(
                       width: 327,
                       height: 55,
@@ -300,10 +306,16 @@ class _LoginScreenState extends State<LoginScreen> {
                           if (_formKey.currentState!.validate()) {
                             try {
                               await AuthService.login(
-                                _emailController.text,
+                                _emailController.text.trim(),
                                 _passwordController.text,
                               );
+
+                              // تمسح بيانات المود المحلية
+                              await _clearLocalMoodData();
+
+                              // تحديث AuthController
                               authController.notifyAuthChange();
+
                               if (mounted) {
                                 await showDialog(
                                   context: context,
@@ -313,8 +325,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       onComplete: () {
                                         Navigator.of(context).pushReplacement(
                                           MaterialPageRoute(
-                                            builder: (context) =>
-                                                const HomeScreen(),
+                                            builder: (context) => const HomeScreen(),
                                           ),
                                         );
                                       },
@@ -324,9 +335,11 @@ class _LoginScreenState extends State<LoginScreen> {
                               }
                             } catch (e) {
                               if (!mounted) return;
-                              var message = e.toString();
+                              var message = e.toString().replaceAll('Exception: ', '');
                               if (message.contains('Invalid')) {
                                 message = 'Invalid email or password';
+                              } else {
+                                message = 'Login failed. Please try again.';
                               }
                               await showDialog(
                                 context: context,
@@ -352,6 +365,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 25),
+
+                    // Social Login
                     Column(
                       children: [
                         Row(
@@ -375,7 +390,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               icon: const Icon(Ionicons.logo_google,
                                   color: Colors.red, size: 35),
                               onPressed: () {
-                                print("Google icon clicked");
+                                print("Google login");
                               },
                             ),
                             const SizedBox(width: 20),
@@ -383,7 +398,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               icon: const Icon(Ionicons.logo_facebook,
                                   color: Colors.blue, size: 35),
                               onPressed: () {
-                                print("Facebook icon clicked");
+                                print("Facebook login");
                               },
                             ),
                             const SizedBox(width: 20),
@@ -391,11 +406,11 @@ class _LoginScreenState extends State<LoginScreen> {
                               icon: const Icon(Ionicons.logo_apple,
                                   color: Colors.black, size: 35),
                               onPressed: () {
-                                print("Apple icon clicked");
+                                print("Apple login");
                               },
                             ),
                           ],
-                        )
+                        ),
                       ],
                     ),
                   ],
