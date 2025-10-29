@@ -11,6 +11,19 @@ import moodRoutes from "./routes/moodRoutes.js";
 dotenv.config();
 const app = express();
 
+// Log all incoming requests for debugging
+app.use((req, res, next) => {
+  console.log(`Incoming request: ${req.method} ${req.url}`);
+  next();
+});
+
+// Middlewares
+app.use(cors({
+  origin: ["http://localhost:4000", "http://10.0.2.2:4000"],
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
+=======
 // Middleware
 app.use(
   cors({
@@ -25,6 +38,11 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/medicine", medicineRoutes);
 app.use("/api/moods", moodRoutes);
+
+// Test route to confirm server is running
+app.get("/test", (req, res) => {
+  res.status(200).json({ message: "Server is running" });
+});
 
 // MongoDB Connection
 mongoose
