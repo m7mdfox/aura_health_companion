@@ -37,7 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
 void initState() {
   super.initState();
 
-  _refreshTimer = Timer.periodic(const Duration(seconds: 20), (_) {
+  _refreshTimer = Timer.periodic(const Duration(seconds: 60), (_) {
     if (mounted) setState(() {});
   });
 
@@ -61,9 +61,17 @@ void _checkVitals(Map<String, dynamic> vitals) async {
   }
 
   if (alertMessage != null && mounted) {
-    _showAlert(alertMessage);
+    final now = DateTime.now();
+
+    // ✅ هنا التحكم في وقت تكرار التنبيه
+    if (now.difference(_lastAlertCheck) >= const Duration(minutes: 5)) {
+      _lastAlertCheck = now;
+      _showAlert(alertMessage);
+    }
   }
 }
+
+
 void _callNumber(String number) async {
   final Uri callUri = Uri(scheme: 'tel', path: number);
   try {
@@ -151,7 +159,7 @@ void _showAlert(String message) {
                   "bpm",
                   const Color(0xFFF9FAFB),
                   icon: Ionicons.heart,
-                  iconColor: const Color(0xFFEF4444),
+                  iconColor: const Color.fromARGB(255, 250, 8, 8),
                 ),
                 _buildStatCard(
                   "Calories",

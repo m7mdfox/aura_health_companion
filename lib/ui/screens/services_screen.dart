@@ -2,7 +2,8 @@ import 'package:aura_health_companion/ui/screens/services/medicine_screen.dart';
 import 'package:aura_health_companion/ui/screens/mental_health/mental_health_home_screen.dart';
 import 'package:flutter/material.dart';
 // import 'package:aura_health_companion/ui/screens/services/medicine_screen.dart';
-
+// import 'package:aura_health_companion/ui/screens/services/medicine_screen.dart';
+import 'package:aura_health_companion/ui/screens/services/nutrition_service.dart';
 
 class ServicesScreen extends StatelessWidget {
   const ServicesScreen({super.key});
@@ -26,18 +27,36 @@ class ServicesScreen extends StatelessWidget {
     if (route == '/medicine') {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => MedicineScreenn()),
-        MaterialPageRoute(builder: (context) => const MedicineScreen()),
+        MaterialPageRoute(builder: (context) => MedicineScreenn())
+        // MaterialPageRoute(builder: (context) => const MedicineScreen())
       );
-    } else if (route == '/mental_health') {
+    } 
+    
+    else if (route == '/mental_health') {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const MentalHealthHomeScreen()),
       );
-    } else {
+    } 
+    //nutrition
+     else if (route == '/nutrition') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const NutritionService()),
+      );
+    } 
+    
+    
+    
+    else {
       Navigator.pushNamed(context, route);
     }
   }
+
+
+
+
+
 
   @override
   Widget build(BuildContext context) {

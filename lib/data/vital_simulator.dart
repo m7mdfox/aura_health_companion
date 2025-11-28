@@ -21,7 +21,7 @@ class VitalSimulator {
   }
 
   Future<void> _loadJsonData() async {
-    final String jsonString = await rootBundle.loadString('assets/vitals.json');
+    final String jsonString = await rootBundle.loadString('assets/animations/vitals.json');
     final Map<String, dynamic> jsonData = json.decode(jsonString);
     _normalData = List<Map<String, dynamic>>.from(jsonData['vitalSigns']);
     _startSimulation();
