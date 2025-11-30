@@ -3,7 +3,7 @@ import 'package:aura_health_companion/ui/screens/mental_health/mental_health_hom
 import 'package:flutter/material.dart';
 // import 'package:aura_health_companion/ui/screens/services/medicine_screen.dart';
 // import 'package:aura_health_companion/ui/screens/services/medicine_screen.dart';
-import 'package:aura_health_companion/ui/screens/services/nutrition_service.dart';
+import 'package:aura_health_companion/ui/screens/nutrition/nutrition_onboarding.dart';
 
 class ServicesScreen extends StatelessWidget {
   const ServicesScreen({super.key});
@@ -42,7 +42,7 @@ class ServicesScreen extends StatelessWidget {
      else if (route == '/nutrition') {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const NutritionService()),
+        MaterialPageRoute(builder: (context) => const NutritionOnboardingFlow()),
       );
     } 
     

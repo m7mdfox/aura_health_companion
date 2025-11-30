@@ -115,4 +115,5 @@ class AuthService {
       return false;
     }
   }
+  static String get baseUrl => _base;
 }

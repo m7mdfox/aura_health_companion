@@ -12,7 +12,8 @@ import dotenv from "dotenv";
 import authRoutes from "./routes/authRoutes.js";
 import medicineRoutes from "./routes/medicineRoutes.js";
 import moodRoutes from "./routes/moodRoutes.js";
-
+import nutritionRoutes from "./routes/nutrition.routes.js";
+import profileRouter from "./routes/profile.js";
 dotenv.config();
 const app = express();
 
@@ -43,7 +44,8 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/medicine", medicineRoutes);
 app.use("/api/moods", moodRoutes);
-
+app.use("/api/nutrition", nutritionRoutes);
+app.use("/api/profile", profileRouter);
 // Test route to confirm server is running
 app.get("/test", (req, res) => {
   res.status(200).json({ message: "Server is running" });
