@@ -14,6 +14,10 @@ import medicineRoutes from "./routes/medicineRoutes.js";
 import moodRoutes from "./routes/moodRoutes.js";
 import nutritionRoutes from "./routes/nutrition.routes.js";
 import profileRouter from "./routes/profile.js";
+// near other imports
+import doctorRoutes from "./routes/doctorRoutes.js";
+import appointmentRoutes from "./routes/appointmentRoutes.js";
+import scheduleRoutes from "./routes/scheduleRoutes.js";
 dotenv.config();
 const app = express();
 
@@ -46,6 +50,10 @@ app.use("/api/medicine", medicineRoutes);
 app.use("/api/moods", moodRoutes);
 app.use("/api/nutrition", nutritionRoutes);
 app.use("/api/profile", profileRouter);
+// New routes
+app.use("/api/doctors", doctorRoutes);
+app.use("/api/appointments", appointmentRoutes);
+app.use("/api/schedules", scheduleRoutes);
 // Test route to confirm server is running
 app.get("/test", (req, res) => {
   res.status(200).json({ message: "Server is running" });
