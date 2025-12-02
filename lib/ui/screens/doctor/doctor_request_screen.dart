@@ -1,15 +1,12 @@
 import 'package:aura_health_companion/models/appointment_model.dart';
 import 'package:aura_health_companion/models/doctor_model.dart';
 import 'package:aura_health_companion/services/api_service.dart';
+import 'package:aura_health_companion/ui/screens/doctor/chat-screen.dart';
+// ⚠️ Ensure this path matches your project structure
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:intl/intl.dart';
-
-// ⚠️ Make sure these paths match your project structure
-// import '../../models/doctor_model.dart';
-// import '../../models/appointment_model.dart';
-// import '../../services/api_service.dart';
 
 class DoctorRequestScreen extends StatefulWidget {
   const DoctorRequestScreen({super.key});
@@ -21,16 +18,16 @@ class DoctorRequestScreen extends StatefulWidget {
 class _DoctorRequestScreenState extends State<DoctorRequestScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-
-  // ⚠️ IMPORTANT: This ID must exist in your MongoDB 'profiles' or 'users' collection.
-  // If this ID is wrong, the server will return "Profile not found" or empty lists.
+  
+  // ⚠️ YOUR PATIENT ID (Ensure this matches your MongoDB User ID)
   final String currentPatientId = "656a1b2c9d8e7f9999999999"; 
 
-  // Futures for async data
   late Future<List<Doctor>> _doctorsFuture;
   late Future<List<Appointment>> _appointmentsFuture;
 
+  // Search & Filter State
   int _selectedFilterIndex = 0;
+  String _searchQuery = "";
   final List<String> _filters = ["All", "Cardiology", "Neurology", "Dermatology", "Psychiatry"];
 
   @override
@@ -53,20 +50,61 @@ class _DoctorRequestScreenState extends State<DoctorRequestScreen>
     super.dispose();
   }
 
-  // --- Logic to calculate End Time ---
+  // ---------------------------------------------------------------------------
+  // 🔍 THE ROBUST "IS CHAT ACTIVE?" LOGIC
+  // ---------------------------------------------------------------------------
+  bool _isAppointmentActive(Appointment appt) {
+    // 1. Check Status
+    if (appt.status.toLowerCase() != 'confirmed') return false;
+
+    final now = DateTime.now();
+
+    // 2. CONVERT UTC TO LOCAL TIME
+    // This is critical. MongoDB dates are UTC. Your phone is Local.
+    // Without this, "Today" might look like "Yesterday" or "Tomorrow".
+    final apptDateLocal = appt.date.toLocal();
+
+    // 3. Check Date Match
+    bool isSameDay = apptDateLocal.year == now.year && 
+                     apptDateLocal.month == now.month && 
+                     apptDateLocal.day == now.day;
+    
+    if (!isSameDay) return false;
+
+    try {
+      // 4. Parse "HH:mm" Strings
+      DateFormat timeFormat = DateFormat("HH:mm");
+      DateTime startParsed = timeFormat.parse(appt.startTime);
+      DateTime endParsed = timeFormat.parse(appt.endTime);
+
+      // 5. Build Today's Date Objects
+      // We take the HOURS from the parsed string and combine them with TODAY'S date.
+      DateTime startDateTime = DateTime(now.year, now.month, now.day, startParsed.hour, startParsed.minute);
+      DateTime endDateTime = DateTime(now.year, now.month, now.day, endParsed.hour, endParsed.minute);
+
+      // 6. Check Time Window (Inclusive)
+      // We subtract/add 1 minute buffer to handle exact minute matches
+      return now.isAfter(startDateTime.subtract(const Duration(minutes: 1))) && 
+             now.isBefore(endDateTime.add(const Duration(minutes: 1)));
+
+    } catch (e) {
+      print("Error parsing appointment time: $e");
+      return false;
+    }
+  }
+
+  // --- Helper: Calculate End Time String ---
   String _calculateEndTime(String startTime, int durationMinutes) {
-    // Parser for HH:mm
     final format = DateFormat("HH:mm"); 
     final start = format.parse(startTime);
     final end = start.add(Duration(minutes: durationMinutes));
     return format.format(end);
   }
 
-  // --- Submit Request to Backend ---
+  // --- Helper: Submit to Backend ---
   Future<void> _submitAppointmentRequest(
       Doctor doctor, DateTime date, TimeOfDay time, String type, String notes) async {
     
-    // Show loading indicator
     showDialog(
       context: context, 
       barrierDismissible: false,
@@ -74,18 +112,14 @@ class _DoctorRequestScreenState extends State<DoctorRequestScreen>
     );
 
     try {
-      // 1. Convert TimeOfDay to "HH:mm" string
       final String startStr = "${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}";
       
-      // 2. Determine duration based on type (Logic from your Data Model)
       final int duration = type.toLowerCase() == 'examination' 
           ? doctor.examDuration 
           : doctor.consultDuration;
 
-      // 3. Calculate End Time
       final String endStr = _calculateEndTime(startStr, duration);
 
-      // 4. Call API
       await ApiService.createAppointment(
         doctorId: doctor.id,
         patientId: currentPatientId,
@@ -97,21 +131,20 @@ class _DoctorRequestScreenState extends State<DoctorRequestScreen>
       );
 
       if (mounted) {
-        Navigator.pop(context); // Close loading dialog
-        Navigator.pop(context); // Close summary dialog/bottom sheet if open
+        Navigator.pop(context); // Close loading
+        Navigator.pop(context); // Close summary
         
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Request Sent Successfully!"), backgroundColor: Colors.green),
         );
         
-        // 5. Refresh Data and Switch Tab
         _fetchData(); 
         _tabController.animateTo(1); 
       }
 
     } catch (e) {
       if (mounted) {
-        Navigator.pop(context); // Close loading dialog
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Error: ${e.toString().replaceAll('Exception:', '')}"), backgroundColor: Colors.red),
         );
@@ -122,7 +155,6 @@ class _DoctorRequestScreenState extends State<DoctorRequestScreen>
   // ---------------------------------------------------------------------------
   // UI BUILD
   // ---------------------------------------------------------------------------
-  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -157,7 +189,7 @@ class _DoctorRequestScreenState extends State<DoctorRequestScreen>
   }
 
   // ---------------------------------------------------------------------------
-  // TAB 1: FIND DOCTOR
+  // TAB 1: FIND DOCTOR (Dynamic Search & Filter)
   // ---------------------------------------------------------------------------
   Widget _buildFindDoctorTab() {
     return Column(
@@ -166,8 +198,9 @@ class _DoctorRequestScreenState extends State<DoctorRequestScreen>
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: TextField(
+            onChanged: (value) => setState(() => _searchQuery = value),
             decoration: InputDecoration(
-              hintText: "Search doctor, specialty...",
+              hintText: "Search doctor name or specialty...",
               hintStyle: GoogleFonts.poppins(color: Colors.grey.shade400, fontSize: 14),
               prefixIcon: const Icon(Ionicons.search, color: Colors.grey),
               filled: true,
@@ -222,12 +255,24 @@ class _DoctorRequestScreenState extends State<DoctorRequestScreen>
                 return const Center(child: Text("No doctors found"));
               }
 
-              // Client-side filtering
+              // Filter Logic
               List<Doctor> doctors = snapshot.data!;
+              
+              // 1. Category Filter
               if (_selectedFilterIndex != 0) {
-                 final filter = _filters[_selectedFilterIndex];
-                 doctors = doctors.where((d) => d.specialty == filter).toList();
+                 final filter = _filters[_selectedFilterIndex].toLowerCase();
+                 doctors = doctors.where((d) => d.specialty.toLowerCase().contains(filter)).toList();
               }
+              // 2. Search Filter
+              if (_searchQuery.isNotEmpty) {
+                final query = _searchQuery.toLowerCase();
+                doctors = doctors.where((d) => 
+                  d.name.toLowerCase().contains(query) || 
+                  d.specialty.toLowerCase().contains(query)
+                ).toList();
+              }
+
+              if (doctors.isEmpty) return const Center(child: Text("No doctors found"));
 
               return ListView.separated(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -256,7 +301,6 @@ class _DoctorRequestScreenState extends State<DoctorRequestScreen>
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Avatar
                 Container(
                   height: 70, width: 70,
                   decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(16)),
@@ -269,8 +313,6 @@ class _DoctorRequestScreenState extends State<DoctorRequestScreen>
                     children: [
                       Text(doctor.name, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold)),
                       Text(doctor.specialty, style: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF3B82F6))),
-                      const SizedBox(height: 4),
-                      Text(doctor.bio, maxLines: 2, overflow: TextOverflow.ellipsis, style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey)),
                     ],
                   ),
                 ),
@@ -301,26 +343,16 @@ class _DoctorRequestScreenState extends State<DoctorRequestScreen>
     return FutureBuilder<List<Appointment>>(
       future: _appointmentsFuture,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-           return Center(child: Text("Error loading requests", style: GoogleFonts.poppins(color: Colors.red)));
-        }
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return Center(child: Text("No requests yet", style: GoogleFonts.poppins(color: Colors.grey)));
-        }
+        if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+        if (!snapshot.hasData || snapshot.data!.isEmpty) return Center(child: Text("No requests yet", style: GoogleFonts.poppins(color: Colors.grey)));
 
-        final requests = snapshot.data!;
-        
         return ListView.separated(
           padding: const EdgeInsets.all(16),
-          itemCount: requests.length,
+          itemCount: snapshot.data!.length,
           separatorBuilder: (_, __) => const SizedBox(height: 12),
           itemBuilder: (context, index) {
-            final req = requests[index];
-            Color statusColor = req.status == 'confirmed' ? Colors.green 
-                              : (req.status == 'cancelled' || req.status == 'rejected' ? Colors.red : Colors.orange);
+            final req = snapshot.data![index];
+            Color statusColor = req.status == 'confirmed' ? Colors.green : Colors.orange;
             
             return Container(
               padding: const EdgeInsets.all(16),
@@ -331,27 +363,19 @@ class _DoctorRequestScreenState extends State<DoctorRequestScreen>
               ),
               child: Row(
                 children: [
-                  Container(
-                    height: 50, width: 50,
-                    decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(12)),
-                    child: const Icon(Ionicons.calendar, color: Colors.blueAccent),
-                  ),
+                  const Icon(Ionicons.calendar, color: Colors.blueAccent),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(req.doctor?.name ?? "Unknown Doctor", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 15)),
+                        Text(req.doctor?.name ?? "Unknown", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
                         Text("${req.type} • ${req.startTime}", style: GoogleFonts.poppins(fontSize: 12, color: Colors.black54)),
                         Text(DateFormat('yyyy-MM-dd').format(req.date), style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey)),
                       ],
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-                    child: Text(req.status.toUpperCase(), style: GoogleFonts.poppins(color: statusColor, fontWeight: FontWeight.w600, fontSize: 10)),
-                  ),
+                  Text(req.status.toUpperCase(), style: GoogleFonts.poppins(color: statusColor, fontWeight: FontWeight.bold, fontSize: 10)),
                 ],
               ),
             );
@@ -362,17 +386,106 @@ class _DoctorRequestScreenState extends State<DoctorRequestScreen>
   }
 
   // ---------------------------------------------------------------------------
-  // TAB 3: CHAT
+  // TAB 3: CHAT (Uses _isAppointmentActive)
   // ---------------------------------------------------------------------------
   Widget _buildChatTab() {
-    return Center(child: Text("Chat feature coming soon...", style: GoogleFonts.poppins(color: Colors.grey)));
+    return FutureBuilder<List<Appointment>>(
+      future: _appointmentsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+        
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Center(child: Text("No appointments found", style: GoogleFonts.poppins(color: Colors.grey)));
+        }
+
+        // 🔍 FILTER LIST: Only show appointments valid RIGHT NOW
+        final activeChats = snapshot.data!.where((appt) => _isAppointmentActive(appt)).toList();
+
+        if (activeChats.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(30.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Ionicons.chatbubble_ellipses_outline, size: 60, color: Colors.grey),
+                  const SizedBox(height: 20),
+                  Text("No Active Chats", style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey)),
+                  const SizedBox(height: 10),
+                  Text(
+                    "Chat opens only during the confirmed appointment time.",
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(color: Colors.grey.shade400),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: activeChats.length,
+          itemBuilder: (context, index) {
+            final appt = activeChats[index];
+            return Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFF00177E),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [BoxShadow(color: const Color(0xFF00177E).withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 5))],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    height: 50, width: 50,
+                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(15)),
+                    child: const Icon(Ionicons.chatbubbles, color: Colors.white),
+                  ),
+                  const SizedBox(width: 15),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("Session Active", style: GoogleFonts.poppins(color: Colors.greenAccent, fontWeight: FontWeight.bold, fontSize: 12)),
+                        Text(appt.doctor?.name ?? "Doctor", style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                        Text("Ends at ${appt.endTime}", style: GoogleFonts.poppins(color: Colors.white70, fontSize: 12)),
+                      ],
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ChatScreen(
+                            doctorId: appt.doctor?.id ?? "",
+                            doctorName: appt.doctor?.name ?? "Doctor",
+                            patientId: currentPatientId,
+                          ),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF00177E),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: const Text("Join"),
+                  )
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
-
   // ---------------------------------------------------------------------------
-  // APPOINTMENT FLOW LOGIC
+  // APPOINTMENT FLOW
   // ---------------------------------------------------------------------------
-
   void _startAppointmentFlow(Doctor doctor, {
     DateTime? initialDate,
     TimeOfDay? initialTime,
@@ -399,6 +512,8 @@ class _DoctorRequestScreenState extends State<DoctorRequestScreen>
 
   void _showSummaryDialog(
       Doctor doctor, DateTime date, TimeOfDay time, String type, String desc) {
+    double price = type == 'Examination' ? doctor.examPrice : doctor.consultPrice;
+    
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -408,11 +523,12 @@ class _DoctorRequestScreenState extends State<DoctorRequestScreen>
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text("Are you sure you want to book this appointment?", textAlign: TextAlign.center, style: GoogleFonts.poppins(fontSize: 14)),
+            Text("Confirm booking?", textAlign: TextAlign.center, style: GoogleFonts.poppins(fontSize: 14)),
             const SizedBox(height: 10),
             _summaryRow("Date", DateFormat('yyyy-MM-dd').format(date)),
             _summaryRow("Time", time.format(context)),
             _summaryRow("Type", type),
+            _summaryRow("Price", "\$${price.toInt()}"),
           ],
         ),
         actions: [
@@ -439,9 +555,8 @@ class _DoctorRequestScreenState extends State<DoctorRequestScreen>
 }
 
 // -----------------------------------------------------------------------------
-// LOCAL WIDGET: FORM SHEET
+// LOCAL WIDGET: FORM SHEET (Dynamic Pricing)
 // -----------------------------------------------------------------------------
-
 class _AppointmentFormSheet extends StatefulWidget {
   final Doctor doctor;
   final DateTime? initialDate;
@@ -466,7 +581,7 @@ class _AppointmentFormSheet extends StatefulWidget {
 class _AppointmentFormSheetState extends State<_AppointmentFormSheet> {
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
-  String _visitType = 'Examination'; // Default
+  String _visitType = 'Examination';
   late TextEditingController _descController;
 
   @override
@@ -504,7 +619,10 @@ class _AppointmentFormSheetState extends State<_AppointmentFormSheet> {
 
   @override
   Widget build(BuildContext context) {
-    double price = _visitType == 'Examination' ? widget.doctor.examPrice : widget.doctor.consultPrice;
+    // Dynamic Pricing Calculation
+    double currentPrice = _visitType == 'Examination' 
+        ? widget.doctor.examPrice 
+        : widget.doctor.consultPrice;
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
@@ -516,14 +634,10 @@ class _AppointmentFormSheetState extends State<_AppointmentFormSheet> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)))),
           const SizedBox(height: 20),
-
           Text("Book with ${widget.doctor.name}", style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 20),
-          
-          // Visit Type
           Row(
             children: [
               Expanded(child: _typeOption('Examination', "\$${widget.doctor.examPrice.toInt()}")),
@@ -532,8 +646,6 @@ class _AppointmentFormSheetState extends State<_AppointmentFormSheet> {
             ],
           ),
           const SizedBox(height: 20),
-
-          // Date & Time Pickers
           Row(
             children: [
               Expanded(
@@ -554,17 +666,16 @@ class _AppointmentFormSheetState extends State<_AppointmentFormSheet> {
             ],
           ),
           const SizedBox(height: 20),
-
-          // Description
           TextField(
             controller: _descController,
             maxLines: 3,
-            decoration: const InputDecoration(
-              hintText: "Symptoms...",
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              hintText: "Briefly describe symptoms...",
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              filled: true,
+              fillColor: Colors.grey.shade50,
             ),
           ),
-          
           const Spacer(),
           ElevatedButton(
             onPressed: () {
@@ -576,9 +687,10 @@ class _AppointmentFormSheetState extends State<_AppointmentFormSheet> {
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF00177E),
-              minimumSize: const Size(double.infinity, 50),
+              minimumSize: const Size(double.infinity, 55),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
             ),
-            child: Text("Review (\$${price.toInt()})", style: const TextStyle(color: Colors.white)),
+            child: Text("Review (\$${currentPrice.toInt()})", style: GoogleFonts.poppins(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
           )
         ],
       ),
@@ -589,17 +701,20 @@ class _AppointmentFormSheetState extends State<_AppointmentFormSheet> {
     bool isSelected = _visitType == label;
     return GestureDetector(
       onTap: () => setState(() => _visitType = label),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 15),
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFF00177E) : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: isSelected ? const Color(0xFF00177E) : Colors.grey.shade300),
+          boxShadow: isSelected ? [BoxShadow(color: const Color(0xFF00177E).withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))] : [],
         ),
         child: Column(
           children: [
-            Text(label, style: TextStyle(color: isSelected ? Colors.white : Colors.black, fontWeight: FontWeight.bold)),
-            Text(price, style: TextStyle(color: isSelected ? Colors.white70 : Colors.grey)),
+            Text(label, style: GoogleFonts.poppins(color: isSelected ? Colors.white : Colors.black87, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            Text(price, style: GoogleFonts.poppins(color: isSelected ? Colors.white70 : Colors.grey, fontSize: 12)),
           ],
         ),
       ),
