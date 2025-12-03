@@ -29,6 +29,9 @@ dependencies:
   intl: ^0.20.2
   flutter_local_notifications: ^19.5.0
   flutter_staggered_animations: ^1.1.1
+  image_picker: ^1.0.4  # To select photos
+  dio: ^5.3.3           # To upload photos easily
+  socket_io_client: ^2.0.3
 
 dev_dependencies:
   flutter_test:

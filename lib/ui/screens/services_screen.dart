@@ -1,15 +1,15 @@
+import 'package:aura_health_companion/ui/screens/doctor/doctor_request_screen.dart'; // 👈 تأكد من استيراد الملف هنا
 import 'package:aura_health_companion/ui/screens/services/medicine_screen.dart';
 import 'package:aura_health_companion/ui/screens/mental_health/mental_health_home_screen.dart';
-import 'package:flutter/material.dart';
-// import 'package:aura_health_companion/ui/screens/services/medicine_screen.dart';
-// import 'package:aura_health_companion/ui/screens/services/medicine_screen.dart';
 import 'package:aura_health_companion/ui/screens/nutrition/nutrition_onboarding.dart';
+import 'package:flutter/material.dart';
 
 class ServicesScreen extends StatelessWidget {
   const ServicesScreen({super.key});
 
   static const List<Map<String, dynamic>> services = [
     {"title": "Watch Data", "icon": Icons.watch, "route": "/watch", "color": Color.fromARGB(255, 0, 21, 139)},
+    {"title": "Request Doctor", "icon": Icons.person_search, "route": "/request_doctor", "color": Color(0xFF2563EB)}, 
     {"title": "Medicine", "icon": Icons.medication, "route": "/medicine", "color": Colors.red},
     {"title": "Mental Health", "icon": Icons.psychology, "route": "/mental_health", "color": Colors.purple},
     {"title": "Nutrition & Diet", "icon": Icons.restaurant, "route": "/nutrition", "color": Colors.orange},
@@ -27,36 +27,34 @@ class ServicesScreen extends StatelessWidget {
     if (route == '/medicine') {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => MedicineScreenn())
-        // MaterialPageRoute(builder: (context) => const MedicineScreen())
+        MaterialPageRoute(builder: (context) => const MedicineScreenn()),
       );
     } 
-    
     else if (route == '/mental_health') {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const MentalHealthHomeScreen()),
       );
     } 
-    //nutrition
-     else if (route == '/nutrition') {
+    else if (route == '/nutrition') {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const NutritionOnboardingFlow()),
       );
     } 
-    
-    
-    
+    // 👇👇👇 هنا الإصلاح 👇👇👇
+    else if (route == '/request_doctor') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const DoctorRequestScreen()),
+      );
+    }
+    // 👆👆👆
     else {
+      // الروابط الأخرى التي قد تكون مسجلة في main.dart
       Navigator.pushNamed(context, route);
     }
   }
-
-
-
-
-
 
   @override
   Widget build(BuildContext context) {
