@@ -1,72 +1,194 @@
+// server.js - FIXED VERSION (No "*" syntax error)
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 
+dotenv.config();
 
+// ✅ Clear cached models safely
+Object.keys(mongoose.models).forEach(modelName => {
+  delete mongoose.models[modelName];
+});
 
-// node server.js 
+// Clear model schemas if it exists
+if (mongoose.connection && mongoose.connection.models) {
+  mongoose.connection.models = {};
+}
 
-
-// Import Routes
+// Now import routes (which will import models)
 import authRoutes from "./routes/authRoutes.js";
 import medicineRoutes from "./routes/medicineRoutes.js";
 import moodRoutes from "./routes/moodRoutes.js";
 import nutritionRoutes from "./routes/nutrition.routes.js";
 import profileRouter from "./routes/profile.js";
-dotenv.config();
+import aiInsightsRoutes from "./routes/aiInsights.js";
+
 const app = express();
 
+// ==================== MIDDLEWARE ====================
 // Log all incoming requests for debugging
 app.use((req, res, next) => {
-  console.log(`Incoming request: ${req.method} ${req.url}`);
+  console.log(`📨 ${new Date().toISOString()} - ${req.method} ${req.url}`);
+  if (req.body && Object.keys(req.body).length > 0) {
+    console.log('📦 Body:', JSON.stringify(req.body).substring(0, 200));
+  }
   next();
 });
 
-// Middlewares
-app.use(cors({
-  origin: ["http://localhost:4000", "http://10.0.2.2:4000"],
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-}));
-
-// Middleware
+// CORS
 app.use(
   cors({
     origin: "*",
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true
   })
 );
-app.use(express.json());
 
-// Routes
+// Body parsing
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// ==================== ROUTES ====================
 app.use("/api/auth", authRoutes);
 app.use("/api/medicine", medicineRoutes);
 app.use("/api/moods", moodRoutes);
-app.use("/api/nutrition", nutritionRoutes);
+app.use("/api/nutrition", nutritionRoutes);  // 🔥 Nutrition routes
 app.use("/api/profile", profileRouter);
-// Test route to confirm server is running
-app.get("/test", (req, res) => {
-  res.status(200).json({ message: "Server is running" });
+app.use("/api/ai-insights", aiInsightsRoutes);
+
+// ==================== TEST ROUTES ====================
+// Root route
+app.get("/", (req, res) => {
+  res.status(200).json({ 
+    message: "Aura Health API is running",
+    mongodb: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
+    timestamp: new Date().toISOString()
+  });
 });
 
-// MongoDB Connection
+// Health check
+app.get("/health", (req, res) => {
+  res.status(200).json({ 
+    status: "OK",
+    mongodb: mongoose.connection.readyState === 1 ? "connected" : "disconnected"
+  });
+});
+
+// Test route
+app.get("/test", (req, res) => {
+  res.status(200).json({ 
+    message: "Server is running",
+    availableRoutes: [
+      "POST /api/auth/...",
+      "POST /api/nutrition/ask-nutritionist",
+      "POST /api/nutrition/suggest-meal",
+      "GET /api/nutrition/...",
+    ]
+  });
+});
+
+// ==================== MONGODB CONNECTION ====================
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.error("MongoDB connection error:", err));
+  .then(() => {
+    console.log("\n✅ MongoDB connected successfully");
+    
+    // List all registered models
+    console.log("\n📋 Registered Mongoose Models:");
+    Object.keys(mongoose.models).forEach(modelName => {
+      console.log(`   - ${modelName}`);
+    });
+    
+    // List all collections in database
+    mongoose.connection.db.listCollections().toArray((err, collections) => {
+      if (err) {
+        console.error("❌ Error listing collections:", err);
+      } else {
+        console.log("\n📊 Available MongoDB Collections:");
+        collections.forEach(col => {
+          console.log(`   - ${col.name}`);
+        });
+        console.log("");
+      }
+    });
+  })
+  .catch((err) => {
+    console.error("❌ MongoDB connection error:", err);
+    process.exit(1);
+  });
 
+// MongoDB connection events
 mongoose.connection.on("connected", () => {
-  console.log("MongoDB connection established");
-});
-mongoose.connection.on("error", (err) => {
-  console.error("MongoDB connection error:", err);
-});
-mongoose.connection.on("disconnected", () => {
-  console.log("MongoDB disconnected");
+  console.log("🔗 MongoDB connection established");
 });
 
-// Start Server
+mongoose.connection.on("error", (err) => {
+  console.error("❌ MongoDB connection error:", err);
+});
+
+mongoose.connection.on("disconnected", () => {
+  console.log("🔌 MongoDB disconnected");
+});
+
+// ==================== ERROR HANDLING ====================
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error("❌ Server Error:", err);
+  console.error("❌ Stack:", err.stack);
+  res.status(500).json({ 
+    error: "Internal server error",
+    message: err.message,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+  });
+});
+
+// 404 handler - MUST BE LAST - FIXED SYNTAX
+app.use((req, res) => {
+  console.log(`❌ 404 - Route not found: ${req.method} ${req.originalUrl}`);
+  res.status(404).json({ 
+    error: "Route not found",
+    path: req.originalUrl,
+    method: req.method
+  });
+});
+
+// ==================== START SERVER ====================
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => {
+  console.log("\n🚀 ========================================");
+  console.log(`✅ Server running on port ${PORT}`);
+  console.log(`🔗 Local: http://localhost:${PORT}`);
+  console.log(`🔗 Network: http://192.168.1.7:${PORT}`);
+  console.log("========================================");
+  console.log("\n📋 Available API Routes:");
+  console.log("   ├─ /api/auth");
+  console.log("   ├─ /api/profile");
+  console.log("   ├─ /api/nutrition");
+  console.log("   │  ├─ POST /api/nutrition/onboarding");
+  console.log("   │  ├─ POST /api/nutrition/generate-plan");
+  console.log("   │  ├─ POST /api/nutrition/ask-nutritionist  🔥 AI Chat");
+  console.log("   │  └─ POST /api/nutrition/suggest-meal");
+  console.log("   ├─ /api/moods");
+  console.log("   ├─ /api/medicine");
+  console.log("   └─ /api/ai-insights");
+  console.log("\n✨ Press Ctrl+C to stop the server\n");
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('👋 SIGTERM received, closing server gracefully...');
+  mongoose.connection.close(() => {
+    console.log('✅ MongoDB connection closed');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('\n👋 SIGINT received, closing server gracefully...');
+  mongoose.connection.close(() => {
+    console.log('✅ MongoDB connection closed');
+    process.exit(0);
+  });
+});

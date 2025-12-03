@@ -1,3 +1,4 @@
+// server/models/profile.js
 import mongoose from "mongoose";
 
 const profileSchema = new mongoose.Schema({
@@ -11,9 +12,19 @@ const profileSchema = new mongoose.Schema({
   height_cm: Number,
   weight_kg: Number,
   chronic_conditions: [String],
+  
+  // ========== NEW FIELD ==========
+  activity_level: { 
+    type: String, 
+    enum: ["sedentary", "lightly_active", "moderately_active", "very_active", "extra_active"],
+    default: "sedentary"
+  },
+  
   avatar_url: String,
   locale: { type: String, default: "en" },
   created_at: { type: Date, default: Date.now },
 });
 
-export default mongoose.model("Profile", profileSchema);
+// ✅ هكذا
+const Profile = mongoose.models.Profile || mongoose.model("Profile", profileSchema);
+export default Profile;

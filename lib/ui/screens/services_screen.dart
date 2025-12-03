@@ -1,9 +1,7 @@
 import 'package:aura_health_companion/ui/screens/services/medicine_screen.dart';
 import 'package:aura_health_companion/ui/screens/mental_health/mental_health_home_screen.dart';
 import 'package:flutter/material.dart';
-// import 'package:aura_health_companion/ui/screens/services/medicine_screen.dart';
-// import 'package:aura_health_companion/ui/screens/services/medicine_screen.dart';
-import 'package:aura_health_companion/ui/screens/nutrition/nutrition_onboarding.dart';
+import 'package:aura_health_companion/ui/screens/nutrition/nutrition_main_entry.dart'; // ✅ الملف الصح
 
 class ServicesScreen extends StatelessWidget {
   const ServicesScreen({super.key});
@@ -28,35 +26,25 @@ class ServicesScreen extends StatelessWidget {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => MedicineScreenn())
-        // MaterialPageRoute(builder: (context) => const MedicineScreen())
       );
     } 
-    
     else if (route == '/mental_health') {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const MentalHealthHomeScreen()),
       );
     } 
-    //nutrition
-     else if (route == '/nutrition') {
+    // ✅ nutrition - استخدام NutritionMainEntry بدل NutritionOnboardingFlow
+    else if (route == '/nutrition') {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const NutritionOnboardingFlow()),
+        MaterialPageRoute(builder: (context) => const NutritionMainEntry()),
       );
     } 
-    
-    
-    
     else {
       Navigator.pushNamed(context, route);
     }
   }
-
-
-
-
-
 
   @override
   Widget build(BuildContext context) {
