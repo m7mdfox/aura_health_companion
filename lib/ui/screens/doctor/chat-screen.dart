@@ -38,15 +38,20 @@ class _ChatScreenState extends State<ChatScreen> {
 
     _chatService.connect(roomId);
     
-    // 1. LOAD HISTORY ON INIT
     _loadHistory();
 
+    // --- LISTENER FIX: Prevent Duplicates ---
     _chatService.listenForMessages((data) {
       if (mounted) {
-        setState(() {
-          _messages.add(data);
-        });
-        _scrollToBottom();
+        // Only add if the sender is NOT me (since I already added mine optimistically)
+        // OR if your server logic handles this, you can remove the check.
+        // But this is safer:
+        if (data['sender'] != widget.patientId) {
+          setState(() {
+            _messages.add(data);
+          });
+          _scrollToBottom();
+        }
       }
     });
   }
@@ -59,7 +64,6 @@ class _ChatScreenState extends State<ChatScreen> {
     super.dispose();
   }
 
-  // --- Function to load history ---
   Future<void> _loadHistory() async {
     final history = await _chatService.getChatHistory(roomId);
     if (mounted) {
@@ -67,7 +71,6 @@ class _ChatScreenState extends State<ChatScreen> {
         _messages = history;
         _isLoadingHistory = false;
       });
-      // Small delay to allow list to build before scrolling
       Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
     }
   }
@@ -84,13 +87,11 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
-  // --- SEND TEXT MESSAGE ---
   void _sendTextMessage() {
     if (_msgController.text.trim().isEmpty) return;
 
     final msgText = _msgController.text.trim();
 
-    // Send to Server
     _chatService.sendMessage(
       roomId: roomId,
       senderId: widget.patientId,
@@ -98,7 +99,6 @@ class _ChatScreenState extends State<ChatScreen> {
       message: msgText,
     );
 
-    // Optimistic UI Update (Show immediately)
     setState(() {
       _messages.add({
         'sender': widget.patientId,
@@ -112,41 +112,45 @@ class _ChatScreenState extends State<ChatScreen> {
     _scrollToBottom();
   }
 
-  // --- PICK & UPLOAD IMAGE ---
   Future<void> _pickAndSendImage() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image == null) return;
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image == null) return;
 
-    File file = File(image.path);
-    
-    // 1. Upload to Server
-    String? uploadedUrl = await _chatService.uploadImage(file);
+      File file = File(image.path);
+      
+      // Show uploading feedback if needed
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Uploading image..."), duration: Duration(seconds: 1)));
 
-    if (uploadedUrl != null) {
-      // 2. Send Socket Message containing URL
-      _chatService.sendMessage(
-        roomId: roomId,
-        senderId: widget.patientId,
-        type: 'image',
-        imageUrl: uploadedUrl,
-      );
+      String? uploadedUrl = await _chatService.uploadImage(file);
 
-      // Add to local UI
-      setState(() {
-        _messages.add({
-          'sender': widget.patientId,
-          'imageUrl': uploadedUrl,
-          'type': 'image',
-          'timestamp': DateTime.now().toIso8601String(),
-        });
-      });
-      _scrollToBottom();
-    } else {
-      if(mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Failed to upload image")),
+      if (uploadedUrl != null) {
+        _chatService.sendMessage(
+          roomId: roomId,
+          senderId: widget.patientId,
+          type: 'image',
+          imageUrl: uploadedUrl,
+          message: 'Sent an image', // Fallback text for old clients
         );
+
+        setState(() {
+          _messages.add({
+            'sender': widget.patientId,
+            'imageUrl': uploadedUrl,
+            'type': 'image',
+            'timestamp': DateTime.now().toIso8601String(),
+          });
+        });
+        _scrollToBottom();
+      } else {
+        if(mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Failed to upload image")),
+          );
+        }
       }
+    } catch (e) {
+      print("Image Error: $e");
     }
   }
 
@@ -167,7 +171,6 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       body: Column(
         children: [
-          // 1. Chat List Area
           Expanded(
             child: _isLoadingHistory
                 ? const Center(child: CircularProgressIndicator())
@@ -177,15 +180,13 @@ class _ChatScreenState extends State<ChatScreen> {
                     itemCount: _messages.length,
                     itemBuilder: (context, index) {
                       final msg = _messages[index];
-                      // Handle MongoDB timestamp vs Socket timestamp
-                      final timestamp = msg['timestamp'].toString(); 
+                      // Null check for timestamp
+                      final timestamp = msg['timestamp']?.toString() ?? DateTime.now().toIso8601String(); 
                       final isMe = msg['sender'] == widget.patientId;
                       return _buildMessageBubble(msg, isMe, timestamp);
                     },
                   ),
           ),
-
-          // 2. Input Area (Text Field + Buttons)
           Container(
             padding: const EdgeInsets.all(10),
             color: Colors.white,
@@ -227,6 +228,14 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildMessageBubble(Map<String, dynamic> msg, bool isMe, String timeStr) {
+    // Robust Time Parsing
+    String formattedTime = "";
+    try {
+        formattedTime = DateFormat('HH:mm').format(DateTime.parse(timeStr).toLocal());
+    } catch (e) {
+        formattedTime = ""; // Fallback if time is broken
+    }
+
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -248,28 +257,31 @@ class _ChatScreenState extends State<ChatScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (msg['type'] == 'image')
+            if (msg['type'] == 'image' && msg['imageUrl'] != null)
               ClipRRect(
                 borderRadius: BorderRadius.circular(10),
                 child: Image.network(
-                  msg['imageUrl'],
+                  msg['imageUrl']!, // Bang operator is safe due to check above
                   loadingBuilder: (context, child, loadingProgress) {
                     if (loadingProgress == null) return child;
-                    return const SizedBox(height: 150, width: 150, child: Center(child: CircularProgressIndicator()));
+                    return Container(
+                        height: 150, 
+                        width: 200, 
+                        color: Colors.grey[200],
+                        child: const Center(child: CircularProgressIndicator()));
                   },
                   errorBuilder: (context, error, stackTrace) => 
-                      const Icon(Icons.broken_image, color: Colors.grey),
+                      const Icon(Icons.broken_image, color: Colors.grey, size: 50),
                 ),
               )
             else
               Text(
-                msg['message'],
+                msg['message'] ?? "", // Safe Fallback for null text
                 style: TextStyle(color: isMe ? Colors.white : Colors.black87),
               ),
             const SizedBox(height: 4),
             Text(
-              // Simple formatting logic
-              DateFormat('HH:mm').format(DateTime.parse(timeStr).toLocal()),
+              formattedTime,
               style: TextStyle(fontSize: 10, color: isMe ? Colors.white70 : Colors.grey),
             ),
           ],
