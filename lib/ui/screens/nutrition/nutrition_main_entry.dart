@@ -62,7 +62,6 @@ class _NutritionMainEntryState extends State<NutritionMainEntry> {
             _isLoading = false;
           });
           
-          // Navigate to result screen
           if (mounted) {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
@@ -93,7 +92,6 @@ class _NutritionMainEntryState extends State<NutritionMainEntry> {
         _isLoading = false;
       });
       
-      // Wait a bit then navigate to onboarding
       await Future.delayed(const Duration(seconds: 2));
       _navigateToOnboarding();
     }
@@ -111,8 +109,10 @@ class _NutritionMainEntryState extends State<NutritionMainEntry> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1B4C),
+      backgroundColor: isDark ? const Color(0xFF0F1120) : const Color(0xFF0D1B4C),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -120,7 +120,7 @@ class _NutritionMainEntryState extends State<NutritionMainEntry> {
             if (_errorMessage != null) ...[
               Icon(
                 Icons.error_outline,
-                color: Colors.orange.shade300,
+                color: isDark ? const Color(0xFFFFB74D) : Colors.orange.shade300,
                 size: 60,
               ),
               const SizedBox(height: 20),
@@ -132,8 +132,8 @@ class _NutritionMainEntryState extends State<NutritionMainEntry> {
                 ),
               ),
             ] else ...[
-              const CircularProgressIndicator(
-                color: Colors.white,
+              CircularProgressIndicator(
+                color: isDark ? const Color(0xFF60A5FA) : Colors.white,
                 strokeWidth: 3,
               ),
               const SizedBox(height: 20),

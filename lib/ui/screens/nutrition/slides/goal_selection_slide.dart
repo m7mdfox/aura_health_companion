@@ -27,10 +27,12 @@ class GoalSelectionSlide extends StatefulWidget {
 }
 
 class _GoalSelectionSlideState extends State<GoalSelectionSlide> {
-  int _step = 1; // 1: Goal Type, 2: Diet Type
+  int _step = 1;
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
@@ -40,7 +42,7 @@ class _GoalSelectionSlideState extends State<GoalSelectionSlide> {
             style: GoogleFonts.cairo(
               fontSize: 26,
               fontWeight: FontWeight.bold,
-              color: const Color(0xFF0D1B4C),
+              color: isDark ? Colors.white : const Color(0xFF0D1B4C),
             ),
           ),
           const SizedBox(height: 10),
@@ -50,12 +52,12 @@ class _GoalSelectionSlideState extends State<GoalSelectionSlide> {
                 : 'اختر النظام الذي يناسبك',
             style: GoogleFonts.cairo(
               fontSize: 14,
-              color: Colors.grey.shade600,
+              color: isDark ? Colors.white70 : Colors.grey.shade600,
             ),
           ),
           const SizedBox(height: 30),
           Expanded(
-            child: _step == 1 ? _buildGoalTypeOptions() : _buildDietTypeOptions(),
+            child: _step == 1 ? _buildGoalTypeOptions(isDark) : _buildDietTypeOptions(isDark),
           ),
           Row(
             children: [
@@ -64,15 +66,16 @@ class _GoalSelectionSlideState extends State<GoalSelectionSlide> {
                   child: OutlinedButton(
                     onPressed: () => setState(() => _step = 1),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF0D1B4C),
-                      side: const BorderSide(color: Color(0xFF0D1B4C)),
+                      foregroundColor: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C),
+                      side: BorderSide(
+                        color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C),
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
                     ),
-                    child: Text('رجوع',
-                        style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
+                    child: Text('رجوع', style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
                   ),
                 ),
               if (_step == 2) const SizedBox(width: 12),
@@ -86,7 +89,7 @@ class _GoalSelectionSlideState extends State<GoalSelectionSlide> {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0D1B4C),
+                    backgroundColor: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
@@ -96,10 +99,7 @@ class _GoalSelectionSlideState extends State<GoalSelectionSlide> {
                   ),
                   child: Text(
                     _step == 1 ? 'التالي' : 'استمرار',
-                    style: GoogleFonts.cairo(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: GoogleFonts.cairo(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -111,7 +111,7 @@ class _GoalSelectionSlideState extends State<GoalSelectionSlide> {
     );
   }
 
-  Widget _buildGoalTypeOptions() {
+  Widget _buildGoalTypeOptions(bool isDark) {
     final goals = [
       {
         'value': 'lose_weight',
@@ -150,10 +150,12 @@ class _GoalSelectionSlideState extends State<GoalSelectionSlide> {
           duration: const Duration(milliseconds: 200),
           margin: const EdgeInsets.only(bottom: 16),
           child: Material(
-            color: isSelected ? const Color(0xFF0D1B4C) : Colors.white,
+            color: isSelected
+                ? (isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C))
+                : (isDark ? const Color(0xFF1A1D2E) : Colors.white),
             borderRadius: BorderRadius.circular(20),
             elevation: isSelected ? 6 : 2,
-            shadowColor: Colors.black.withOpacity(0.1),
+            shadowColor: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
             child: InkWell(
               onTap: () => widget.onGoalTypeSelect(goal['value'] as String),
               borderRadius: BorderRadius.circular(20),
@@ -166,14 +168,12 @@ class _GoalSelectionSlideState extends State<GoalSelectionSlide> {
                       decoration: BoxDecoration(
                         color: isSelected
                             ? Colors.white.withOpacity(0.2)
-                            : (goal['color'] as Color).withOpacity(0.1),
+                            : (goal['color'] as Color).withOpacity(isDark ? 0.2 : 0.1),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Icon(
                         goal['icon'] as IconData,
-                        color: isSelected
-                            ? Colors.white
-                            : goal['color'] as Color,
+                        color: isSelected ? Colors.white : goal['color'] as Color,
                         size: 28,
                       ),
                     ),
@@ -189,7 +189,7 @@ class _GoalSelectionSlideState extends State<GoalSelectionSlide> {
                               fontWeight: FontWeight.bold,
                               color: isSelected
                                   ? Colors.white
-                                  : const Color(0xFF0D1B4C),
+                                  : (isDark ? Colors.white : const Color(0xFF0D1B4C)),
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -199,15 +199,14 @@ class _GoalSelectionSlideState extends State<GoalSelectionSlide> {
                               fontSize: 13,
                               color: isSelected
                                   ? Colors.white70
-                                  : Colors.grey.shade600,
+                                  : (isDark ? Colors.white60 : Colors.grey.shade600),
                             ),
                           ),
                         ],
                       ),
                     ),
                     if (isSelected)
-                      const Icon(Icons.check_circle,
-                          color: Colors.white, size: 28),
+                      const Icon(Icons.check_circle, color: Colors.white, size: 28),
                   ],
                 ),
               ),
@@ -218,7 +217,7 @@ class _GoalSelectionSlideState extends State<GoalSelectionSlide> {
     );
   }
 
-  Widget _buildDietTypeOptions() {
+  Widget _buildDietTypeOptions(bool isDark) {
     final diets = [
       {
         'value': 'balanced',
@@ -256,10 +255,12 @@ class _GoalSelectionSlideState extends State<GoalSelectionSlide> {
                 duration: const Duration(milliseconds: 200),
                 margin: const EdgeInsets.only(bottom: 14),
                 child: Material(
-                  color: isSelected ? const Color(0xFF0D1B4C) : Colors.white,
+                  color: isSelected
+                      ? (isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C))
+                      : (isDark ? const Color(0xFF1A1D2E) : Colors.white),
                   borderRadius: BorderRadius.circular(18),
                   elevation: isSelected ? 4 : 2,
-                  shadowColor: Colors.black.withOpacity(0.1),
+                  shadowColor: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
                   child: InkWell(
                     onTap: () {
                       widget.onDietTypeSelect(diet['value'] as String);
@@ -276,7 +277,7 @@ class _GoalSelectionSlideState extends State<GoalSelectionSlide> {
                             diet['icon'] as IconData,
                             color: isSelected
                                 ? Colors.white
-                                : const Color(0xFF0D1B4C),
+                                : (isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C)),
                             size: 26,
                           ),
                           const SizedBox(width: 16),
@@ -291,7 +292,7 @@ class _GoalSelectionSlideState extends State<GoalSelectionSlide> {
                                     fontWeight: FontWeight.bold,
                                     color: isSelected
                                         ? Colors.white
-                                        : const Color(0xFF0D1B4C),
+                                        : (isDark ? Colors.white : const Color(0xFF0D1B4C)),
                                   ),
                                 ),
                                 const SizedBox(height: 3),
@@ -301,15 +302,14 @@ class _GoalSelectionSlideState extends State<GoalSelectionSlide> {
                                     fontSize: 12,
                                     color: isSelected
                                         ? Colors.white70
-                                        : Colors.grey.shade600,
+                                        : (isDark ? Colors.white60 : Colors.grey.shade600),
                                   ),
                                 ),
                               ],
                             ),
                           ),
                           if (isSelected)
-                            const Icon(Icons.check_circle,
-                                color: Colors.white, size: 24),
+                            const Icon(Icons.check_circle, color: Colors.white, size: 24),
                         ],
                       ),
                     ),
@@ -326,46 +326,38 @@ class _GoalSelectionSlideState extends State<GoalSelectionSlide> {
             style: GoogleFonts.cairo(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: const Color(0xFF0D1B4C),
+              color: isDark ? Colors.white : const Color(0xFF0D1B4C),
             ),
           ),
           const SizedBox(height: 12),
-          _buildIfScheduleOptions(),
+          _buildIfScheduleOptions(isDark),
         ],
       ],
     );
   }
 
-  Widget _buildIfScheduleOptions() {
+  Widget _buildIfScheduleOptions(bool isDark) {
     final schedules = [
-      {
-        'value': '16_8',
-        'title': '16/8',
-        'subtitle': '16 ساعة صيام، 8 ساعات أكل'
-      },
-      {
-        'value': '18_6',
-        'title': '18/6',
-        'subtitle': '18 ساعة صيام، 6 ساعات أكل'
-      },
+      {'value': '16_8', 'title': '16/8', 'subtitle': '16 ساعة صيام، 8 ساعات أكل'},
+      {'value': '18_6', 'title': '18/6', 'subtitle': '18 ساعة صيام، 6 ساعات أكل'},
       {'value': 'omad', 'title': 'OMAD', 'subtitle': 'وجبة واحدة في اليوم'},
     ];
 
     return Column(
       children: schedules.map((schedule) {
-        final bool isSelected =
-            widget.selectedIfSchedule == schedule['value'];
+        final bool isSelected = widget.selectedIfSchedule == schedule['value'];
         return AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           margin: const EdgeInsets.only(bottom: 10),
           child: Material(
             color: isSelected
-                ? const Color(0xFF0D1B4C).withOpacity(0.2)
-                : Colors.grey.shade50,
+                ? (isDark 
+                    ? const Color(0xFF60A5FA).withOpacity(0.3)
+                    : const Color(0xFF0D1B4C).withOpacity(0.2))
+                : (isDark ? const Color(0xFF252838) : Colors.grey.shade50),
             borderRadius: BorderRadius.circular(14),
             child: InkWell(
-              onTap: () =>
-                  widget.onIfScheduleSelect(schedule['value'] as String),
+              onTap: () => widget.onIfScheduleSelect(schedule['value'] as String),
               borderRadius: BorderRadius.circular(14),
               child: Padding(
                 padding: const EdgeInsets.all(14),
@@ -376,7 +368,7 @@ class _GoalSelectionSlideState extends State<GoalSelectionSlide> {
                       style: GoogleFonts.cairo(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: const Color(0xFF0D1B4C),
+                        color: isDark ? Colors.white : const Color(0xFF0D1B4C),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -384,13 +376,16 @@ class _GoalSelectionSlideState extends State<GoalSelectionSlide> {
                       schedule['subtitle'] as String,
                       style: GoogleFonts.cairo(
                         fontSize: 13,
-                        color: Colors.grey.shade600,
+                        color: isDark ? Colors.white60 : Colors.grey.shade600,
                       ),
                     ),
                     const Spacer(),
                     if (isSelected)
-                      const Icon(Icons.check_circle,
-                          color: Color(0xFF0D1B4C), size: 22),
+                      Icon(
+                        Icons.check_circle,
+                        color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C),
+                        size: 22,
+                      ),
                   ],
                 ),
               ),

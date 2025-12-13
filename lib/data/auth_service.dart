@@ -116,4 +116,6 @@ class AuthService {
     }
   }
   static String get baseUrl => _base;
+
+  static Future<void> updateProfileInSession(Map<String, dynamic> json) async {}
 }

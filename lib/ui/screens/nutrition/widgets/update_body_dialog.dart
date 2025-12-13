@@ -40,16 +40,18 @@ class _UpdateBodyDialogState extends State<UpdateBodyDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(20),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? const Color(0xFF1A1D2E) : Colors.white,
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
+              color: Colors.black.withOpacity(isDark ? 0.4 : 0.2),
               blurRadius: 30,
               offset: const Offset(0, 20),
             ),
@@ -69,20 +71,20 @@ class _UpdateBodyDialogState extends State<UpdateBodyDialog> {
                     style: GoogleFonts.cairo(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      color: const Color(0xFF0D1B4C),
+                      color: isDark ? Colors.white : const Color(0xFF0D1B4C),
                     ),
                   ),
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(),
                     icon: Container(
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
+                        color: isDark ? Colors.white12 : Colors.grey.shade100,
                         shape: BoxShape.circle,
                       ),
                       padding: const EdgeInsets.all(4),
-                      child: const Icon(
+                      child: Icon(
                         Icons.close,
-                        color: Colors.grey,
+                        color: isDark ? Colors.white : Colors.grey,
                         size: 20,
                       ),
                     ),
@@ -94,12 +96,14 @@ class _UpdateBodyDialogState extends State<UpdateBodyDialog> {
                 controller: heightCtrl,
                 label: 'الطول (سم)',
                 prefixIcon: Icons.height,
+                isDark: isDark,
               ),
               const SizedBox(height: 16),
               _buildInputField(
                 controller: weightCtrl,
                 label: 'الوزن (كجم)',
                 prefixIcon: Icons.fitness_center,
+                isDark: isDark,
               ),
               const SizedBox(height: 24),
               Row(
@@ -108,8 +112,10 @@ class _UpdateBodyDialogState extends State<UpdateBodyDialog> {
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF0D1B4C),
-                        side: const BorderSide(color: Color(0xFF0D1B4C)),
+                        foregroundColor: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C),
+                        side: BorderSide(
+                          color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C),
+                        ),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -147,7 +153,7 @@ class _UpdateBodyDialogState extends State<UpdateBodyDialog> {
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0D1B4C),
+                        backgroundColor: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
@@ -174,32 +180,41 @@ class _UpdateBodyDialogState extends State<UpdateBodyDialog> {
     required TextEditingController controller,
     required String label,
     required IconData prefixIcon,
+    required bool isDark,
   }) {
     return TextFormField(
       controller: controller,
       keyboardType: TextInputType.number,
       style: GoogleFonts.mulish(
-        color: const Color(0xFF0D1B4C),
+        color: isDark ? Colors.white : const Color(0xFF0D1B4C),
         fontWeight: FontWeight.w500,
       ),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: GoogleFonts.cairo(
-          color: Colors.grey.shade600,
+          color: isDark ? Colors.white60 : Colors.grey.shade600,
           fontWeight: FontWeight.w500,
         ),
         filled: true,
-        fillColor: Colors.grey.shade50,
-        prefixIcon: Icon(prefixIcon, color: Colors.grey),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+        fillColor: isDark ? const Color(0xFF252838) : Colors.grey.shade50,
+        prefixIcon: Icon(
+          prefixIcon,
+          color: isDark ? Colors.white60 : Colors.grey,
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade300, width: 1.5),
+          borderSide: BorderSide(
+            color: isDark ? Colors.white12 : Colors.grey.shade300,
+            width: 1.5,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF0D1B4C), width: 2),
+          borderSide: BorderSide(
+            color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C),
+            width: 2,
+          ),
         ),
       ),
     );

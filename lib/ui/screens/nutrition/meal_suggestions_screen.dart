@@ -70,10 +70,12 @@ class _MealSuggestionsScreenState extends State<MealSuggestionsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: isDark ? const Color(0xFF0F1120) : Colors.grey.shade50,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0D1B4C),
+        backgroundColor: isDark ? const Color(0xFF1A1D2E) : const Color(0xFF0D1B4C),
         title: Text(
           'اقتراح وجبات',
           style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
@@ -84,27 +86,31 @@ class _MealSuggestionsScreenState extends State<MealSuggestionsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildInputSection(),
+            _buildInputSection(isDark),
             const SizedBox(height: 30),
             if (_isLoading)
-              const Center(child: CircularProgressIndicator())
+              Center(
+                child: CircularProgressIndicator(
+                  color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C),
+                ),
+              )
             else if (_suggestion != null)
-              _buildSuggestionCard(),
+              _buildSuggestionCard(isDark),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildInputSection() {
+  Widget _buildInputSection(bool isDark) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1A1D2E) : Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -118,37 +124,82 @@ class _MealSuggestionsScreenState extends State<MealSuggestionsScreen> {
             style: GoogleFonts.cairo(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: const Color(0xFF0D1B4C),
+              color: isDark ? Colors.white : const Color(0xFF0D1B4C),
             ),
           ),
           const SizedBox(height: 20),
           TextField(
             controller: _caloriesController,
             keyboardType: TextInputType.number,
+            style: GoogleFonts.mulish(
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : Colors.black87,
+            ),
             decoration: InputDecoration(
               labelText: 'السعرات المتبقية اليوم',
-              labelStyle: GoogleFonts.cairo(),
+              labelStyle: GoogleFonts.cairo(
+                color: isDark ? Colors.white60 : Colors.grey.shade600,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: isDark ? Colors.white24 : Colors.grey.shade300,
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: isDark ? Colors.white24 : Colors.grey.shade300,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C),
+                  width: 2,
+                ),
               ),
               prefixIcon: const Icon(Icons.local_fire_department, color: Colors.orange),
+              filled: true,
+              fillColor: isDark ? const Color(0xFF252838) : Colors.grey.shade50,
             ),
-            style: GoogleFonts.mulish(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           TextField(
             controller: _ingredientsController,
+            style: GoogleFonts.cairo(
+              color: isDark ? Colors.white : Colors.black87,
+            ),
             decoration: InputDecoration(
               labelText: 'مكونات موجودة (اختياري)',
               hintText: 'مثال: بيض، دجاج، أرز',
-              hintStyle: GoogleFonts.cairo(fontSize: 12, color: Colors.grey),
-              labelStyle: GoogleFonts.cairo(),
+              hintStyle: GoogleFonts.cairo(
+                fontSize: 12,
+                color: isDark ? Colors.white38 : Colors.grey,
+              ),
+              labelStyle: GoogleFonts.cairo(
+                color: isDark ? Colors.white60 : Colors.grey.shade600,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: isDark ? Colors.white24 : Colors.grey.shade300,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C),
+                  width: 2,
+                ),
+              ),
               prefixIcon: const Icon(Icons.kitchen, color: Colors.green),
+              filled: true,
+              fillColor: isDark ? const Color(0xFF252838) : Colors.grey.shade50,
             ),
-            style: GoogleFonts.cairo(),
           ),
           const SizedBox(height: 20),
           SizedBox(
@@ -156,7 +207,7 @@ class _MealSuggestionsScreenState extends State<MealSuggestionsScreen> {
             child: ElevatedButton(
               onPressed: _isLoading ? null : _getSuggestion,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0D1B4C),
+                backgroundColor: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C),
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -177,15 +228,15 @@ class _MealSuggestionsScreenState extends State<MealSuggestionsScreen> {
     );
   }
 
-  Widget _buildSuggestionCard() {
+  Widget _buildSuggestionCard(bool isDark) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1A1D2E) : Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -203,7 +254,7 @@ class _MealSuggestionsScreenState extends State<MealSuggestionsScreen> {
                 style: GoogleFonts.cairo(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF0D1B4C),
+                  color: isDark ? Colors.white : const Color(0xFF0D1B4C),
                 ),
               ),
             ],
@@ -214,6 +265,7 @@ class _MealSuggestionsScreenState extends State<MealSuggestionsScreen> {
             style: GoogleFonts.cairo(
               fontSize: 18,
               fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : Colors.black87,
             ),
           ),
           const SizedBox(height: 12),
@@ -222,24 +274,28 @@ class _MealSuggestionsScreenState extends State<MealSuggestionsScreen> {
             '${_suggestion!['calories']} سعرة',
             Icons.local_fire_department,
             Colors.red.shade400,
+            isDark,
           ),
           _buildNutrientRow(
             'البروتين',
             '${_suggestion!['protein']}g',
             Icons.egg,
             Colors.orange.shade400,
+            isDark,
           ),
           _buildNutrientRow(
             'الكارب',
             '${_suggestion!['carbs']}g',
             Icons.rice_bowl,
             Colors.amber.shade600,
+            isDark,
           ),
           _buildNutrientRow(
             'الدهون',
             '${_suggestion!['fats']}g',
             Icons.water_drop,
             Colors.blue.shade400,
+            isDark,
           ),
           const SizedBox(height: 16),
           Text(
@@ -247,6 +303,7 @@ class _MealSuggestionsScreenState extends State<MealSuggestionsScreen> {
             style: GoogleFonts.cairo(
               fontSize: 16,
               fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : Colors.black87,
             ),
           ),
           const SizedBox(height: 8),
@@ -257,7 +314,14 @@ class _MealSuggestionsScreenState extends State<MealSuggestionsScreen> {
                 children: [
                   Icon(Icons.check_circle, color: Colors.green.shade400, size: 16),
                   const SizedBox(width: 8),
-                  Text(ingredient, style: GoogleFonts.cairo()),
+                  Expanded(
+                    child: Text(
+                      ingredient,
+                      style: GoogleFonts.cairo(
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -269,12 +333,16 @@ class _MealSuggestionsScreenState extends State<MealSuggestionsScreen> {
               style: GoogleFonts.cairo(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : Colors.black87,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               _suggestion!['preparation'],
-              style: GoogleFonts.cairo(fontSize: 14),
+              style: GoogleFonts.cairo(
+                fontSize: 14,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
             ),
           ],
         ],
@@ -282,7 +350,13 @@ class _MealSuggestionsScreenState extends State<MealSuggestionsScreen> {
     );
   }
 
-  Widget _buildNutrientRow(String label, String value, IconData icon, Color color) {
+  Widget _buildNutrientRow(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+    bool isDark,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -293,7 +367,7 @@ class _MealSuggestionsScreenState extends State<MealSuggestionsScreen> {
             '$label: ',
             style: GoogleFonts.cairo(
               fontSize: 14,
-              color: Colors.grey.shade600,
+              color: isDark ? Colors.white60 : Colors.grey.shade600,
             ),
           ),
           Text(
@@ -301,6 +375,7 @@ class _MealSuggestionsScreenState extends State<MealSuggestionsScreen> {
             style: GoogleFonts.mulish(
               fontSize: 14,
               fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : Colors.black87,
             ),
           ),
         ],

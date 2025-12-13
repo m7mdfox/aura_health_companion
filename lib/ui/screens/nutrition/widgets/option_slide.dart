@@ -24,6 +24,8 @@ class OptionSlide extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
@@ -34,7 +36,7 @@ class OptionSlide extends StatelessWidget {
             style: GoogleFonts.cairo(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: const Color(0xFF0D1B4C),
+              color: isDark ? Colors.white : const Color(0xFF0D1B4C),
             ),
           ),
           const SizedBox(height: 30),
@@ -45,10 +47,12 @@ class OptionSlide extends StatelessWidget {
               duration: const Duration(milliseconds: 200),
               margin: const EdgeInsets.only(bottom: 14),
               child: Material(
-                color: isSelected ? const Color(0xFF0D1B4C) : Colors.white,
+                color: isSelected
+                    ? (isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C))
+                    : (isDark ? const Color(0xFF1A1D2E) : Colors.white),
                 borderRadius: BorderRadius.circular(18),
                 elevation: isSelected ? 4 : 2,
-                shadowColor: Colors.black.withOpacity(0.1),
+                shadowColor: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
                 child: InkWell(
                   onTap: () => onSelect(value),
                   borderRadius: BorderRadius.circular(18),
@@ -59,7 +63,9 @@ class OptionSlide extends StatelessWidget {
                         if (useIcon && opt['icon'] != null) ...[
                           Icon(
                             opt['icon'] as IconData,
-                            color: isSelected ? Colors.white : Colors.grey,
+                            color: isSelected
+                                ? Colors.white
+                                : (isDark ? Colors.white60 : Colors.grey),
                           ),
                           const SizedBox(width: 16),
                         ],
@@ -74,7 +80,7 @@ class OptionSlide extends StatelessWidget {
                                   height: 1.4,
                                   color: isSelected
                                       ? Colors.white
-                                      : const Color(0xFF0D1B4C),
+                                      : (isDark ? Colors.white : const Color(0xFF0D1B4C)),
                                   fontWeight: isSelected
                                       ? FontWeight.bold
                                       : FontWeight.normal,
@@ -88,7 +94,7 @@ class OptionSlide extends StatelessWidget {
                                     fontSize: 13,
                                     color: isSelected
                                         ? Colors.white70
-                                        : Colors.grey.shade600,
+                                        : (isDark ? Colors.white60 : Colors.grey.shade600),
                                   ),
                                 ),
                               ],
@@ -105,20 +111,20 @@ class OptionSlide extends StatelessWidget {
             );
           }),
           const Spacer(),
-          _buildNextButton(onNext),
+          _buildNextButton(onNext, isDark),
         ],
       ),
     );
   }
 
-  Widget _buildNextButton(VoidCallback onPressed) {
+  Widget _buildNextButton(VoidCallback onPressed, bool isDark) {
     return SizedBox(
       width: double.infinity,
       child: TextButton(
         onPressed: onPressed,
         style: TextButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 16),
-          foregroundColor: const Color(0xFF0D1B4C),
+          foregroundColor: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,

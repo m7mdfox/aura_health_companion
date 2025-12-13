@@ -119,8 +119,10 @@ class _NutritionLoadingScreenState extends State<NutritionLoadingScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1B4C),
+      backgroundColor: isDark ? const Color(0xFF0F1120) : const Color(0xFF0D1B4C),
       body: SafeArea(
         child: Center(
           child: Column(
@@ -162,7 +164,7 @@ class _NutritionLoadingScreenState extends State<NutritionLoadingScreen>
                   child: LinearProgressIndicator(
                     backgroundColor: Colors.white.withOpacity(0.2),
                     valueColor: AlwaysStoppedAnimation<Color>(
-                      Colors.orange.shade300,
+                      isDark ? const Color(0xFF60A5FA) : Colors.orange.shade300,
                     ),
                   ),
                 ),

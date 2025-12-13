@@ -47,7 +47,6 @@ class _ProgressTrackerScreenState extends State<ProgressTrackerScreen> {
         setState(() {
           _history = List<Map<String, dynamic>>.from(data['data'] ?? []);
           
-          // Get today's data if exists
           final today = DateTime.now();
           final todayData = _history.firstWhere(
             (item) {
@@ -74,6 +73,7 @@ class _ProgressTrackerScreenState extends State<ProgressTrackerScreen> {
   }
 
   Future<void> _logProgress() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (_) => _LogProgressDialog(
@@ -122,46 +122,49 @@ class _ProgressTrackerScreenState extends State<ProgressTrackerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: Color(0xFF0D1B4C)),
+      return Center(
+        child: CircularProgressIndicator(
+          color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C),
+        ),
       );
     }
 
     final caloriesPercent = (_todayCalories / widget.targetCalories).clamp(0.0, 1.0);
-    final waterPercent = (_todayWater / 8).clamp(0.0, 1.0); // 8 glasses target
+    final waterPercent = (_todayWater / 8).clamp(0.0, 1.0);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildTodayCard(caloriesPercent, waterPercent),
+          _buildTodayCard(caloriesPercent, waterPercent, isDark),
           const SizedBox(height: 24),
-          _buildWeightProgress(),
+          _buildWeightProgress(isDark),
           const SizedBox(height: 24),
-          _buildCaloriesChart(),
+          _buildCaloriesChart(isDark),
           const SizedBox(height: 24),
-          _buildAchievements(),
+          _buildAchievements(isDark),
         ],
       ),
     );
   }
 
-  Widget _buildTodayCard(double caloriesPercent, double waterPercent) {
+  Widget _buildTodayCard(double caloriesPercent, double waterPercent, bool isDark) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            const Color(0xFF0D1B4C),
-            const Color(0xFF1a2d6e),
-          ],
+          colors: isDark
+              ? [const Color(0xFF1A1D2E), const Color(0xFF252838)]
+              : [const Color(0xFF0D1B4C), const Color(0xFF1a2d6e)],
         ),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0D1B4C).withOpacity(0.3),
+            color: (isDark ? Colors.black : const Color(0xFF0D1B4C)).withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -185,8 +188,8 @@ class _ProgressTrackerScreenState extends State<ProgressTrackerScreen> {
                 icon: const Icon(Icons.add, size: 18),
                 label: Text('تسجيل', style: GoogleFonts.cairo(fontSize: 13)),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: const Color(0xFF0D1B4C),
+                  backgroundColor: isDark ? const Color(0xFF60A5FA) : Colors.white,
+                  foregroundColor: isDark ? Colors.white : const Color(0xFF0D1B4C),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -273,9 +276,9 @@ class _ProgressTrackerScreenState extends State<ProgressTrackerScreen> {
     );
   }
 
-  Widget _buildWeightProgress() {
+  Widget _buildWeightProgress(bool isDark) {
     if (_history.isEmpty) {
-      return _buildEmptyCard('لا توجد بيانات للوزن');
+      return _buildEmptyCard('لا توجد بيانات للوزن', isDark);
     }
 
     final weights = _history
@@ -286,7 +289,7 @@ class _ProgressTrackerScreenState extends State<ProgressTrackerScreen> {
         .toList();
 
     if (weights.isEmpty) {
-      return _buildEmptyCard('لا توجد بيانات للوزن');
+      return _buildEmptyCard('لا توجد بيانات للوزن', isDark);
     }
 
     final firstWeight = weights.first;
@@ -297,11 +300,11 @@ class _ProgressTrackerScreenState extends State<ProgressTrackerScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1A1D2E) : Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -319,7 +322,7 @@ class _ProgressTrackerScreenState extends State<ProgressTrackerScreen> {
                 style: GoogleFonts.cairo(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF0D1B4C),
+                  color: isDark ? Colors.white : const Color(0xFF0D1B4C),
                 ),
               ),
             ],
@@ -328,12 +331,13 @@ class _ProgressTrackerScreenState extends State<ProgressTrackerScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildWeightStat('البداية', firstWeight, Icons.flag),
-              _buildWeightStat('الحالي', lastWeight, Icons.person),
+              _buildWeightStat('البداية', firstWeight, Icons.flag, isDark),
+              _buildWeightStat('الحالي', lastWeight, Icons.person, isDark),
               _buildWeightStat(
                 'الفرق',
                 diff.abs(),
                 isLoss ? Icons.arrow_downward : Icons.arrow_upward,
+                isDark,
                 color: isLoss ? Colors.green : Colors.red,
               ),
             ],
@@ -343,16 +347,16 @@ class _ProgressTrackerScreenState extends State<ProgressTrackerScreen> {
     );
   }
 
-  Widget _buildWeightStat(String label, double value, IconData icon, {Color? color}) {
+  Widget _buildWeightStat(String label, double value, IconData icon, bool isDark, {Color? color}) {
     return Column(
       children: [
-        Icon(icon, color: color ?? Colors.grey.shade600, size: 28),
+        Icon(icon, color: color ?? (isDark ? Colors.white60 : Colors.grey.shade600), size: 28),
         const SizedBox(height: 8),
         Text(
           label,
           style: GoogleFonts.cairo(
             fontSize: 12,
-            color: Colors.grey.shade600,
+            color: isDark ? Colors.white60 : Colors.grey.shade600,
           ),
         ),
         const SizedBox(height: 4),
@@ -361,16 +365,16 @@ class _ProgressTrackerScreenState extends State<ProgressTrackerScreen> {
           style: GoogleFonts.mulish(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: color ?? const Color(0xFF0D1B4C),
+            color: color ?? (isDark ? Colors.white : const Color(0xFF0D1B4C)),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildCaloriesChart() {
+  Widget _buildCaloriesChart(bool isDark) {
     if (_history.isEmpty) {
-      return _buildEmptyCard('لا توجد بيانات للسعرات');
+      return _buildEmptyCard('لا توجد بيانات للسعرات', isDark);
     }
 
     final last7Days = _history.take(7).toList().reversed.toList();
@@ -378,8 +382,15 @@ class _ProgressTrackerScreenState extends State<ProgressTrackerScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1A1D2E) : Colors.white,
         borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -393,7 +404,7 @@ class _ProgressTrackerScreenState extends State<ProgressTrackerScreen> {
                 style: GoogleFonts.cairo(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF0D1B4C),
+                  color: isDark ? Colors.white : const Color(0xFF0D1B4C),
                 ),
               ),
             ],
@@ -435,7 +446,7 @@ class _ProgressTrackerScreenState extends State<ProgressTrackerScreen> {
                       dayName,
                       style: GoogleFonts.cairo(
                         fontSize: 11,
-                        color: Colors.grey.shade600,
+                        color: isDark ? Colors.white60 : Colors.grey.shade600,
                       ),
                     ),
                   ],
@@ -448,12 +459,19 @@ class _ProgressTrackerScreenState extends State<ProgressTrackerScreen> {
     );
   }
 
-  Widget _buildAchievements() {
+  Widget _buildAchievements(bool isDark) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1A1D2E) : Colors.white,
         borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -467,30 +485,34 @@ class _ProgressTrackerScreenState extends State<ProgressTrackerScreen> {
                 style: GoogleFonts.cairo(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF0D1B4C),
+                  color: isDark ? Colors.white : const Color(0xFF0D1B4C),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          _buildAchievementItem('🔥', 'أسبوع كامل من الالتزام', true),
-          _buildAchievementItem('💪', 'خسارة 1 كجم', true),
-          _buildAchievementItem('🎯', 'التزمت بـ 30 يوم', false),
-          _buildAchievementItem('⭐', 'وصلت للوزن المثالي', false),
+          _buildAchievementItem('🔥', 'أسبوع كامل من الالتزام', true, isDark),
+          _buildAchievementItem('💪', 'خسارة 1 كجم', true, isDark),
+          _buildAchievementItem('🎯', 'التزمت بـ 30 يوم', false, isDark),
+          _buildAchievementItem('⭐', 'وصلت للوزن المثالي', false, isDark),
         ],
       ),
     );
   }
 
-  Widget _buildAchievementItem(String emoji, String title, bool achieved) {
+  Widget _buildAchievementItem(String emoji, String title, bool achieved, bool isDark) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: achieved ? Colors.amber.shade50 : Colors.grey.shade50,
+        color: achieved
+            ? (isDark ? const Color(0xFF3D3000) : Colors.amber.shade50)
+            : (isDark ? const Color(0xFF252838) : Colors.grey.shade50),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: achieved ? Colors.amber.shade200 : Colors.grey.shade200,
+          color: achieved
+              ? Colors.amber.shade200
+              : (isDark ? Colors.white12 : Colors.grey.shade200),
         ),
       ),
       child: Row(
@@ -503,7 +525,9 @@ class _ProgressTrackerScreenState extends State<ProgressTrackerScreen> {
               style: GoogleFonts.cairo(
                 fontSize: 14,
                 fontWeight: achieved ? FontWeight.bold : FontWeight.normal,
-                color: achieved ? const Color(0xFF0D1B4C) : Colors.grey.shade600,
+                color: achieved
+                    ? (isDark ? Colors.white : const Color(0xFF0D1B4C))
+                    : (isDark ? Colors.white60 : Colors.grey.shade600),
               ),
             ),
           ),
@@ -514,23 +538,34 @@ class _ProgressTrackerScreenState extends State<ProgressTrackerScreen> {
     );
   }
 
-  Widget _buildEmptyCard(String message) {
+  Widget _buildEmptyCard(String message, bool isDark) {
     return Container(
       padding: const EdgeInsets.all(40),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1A1D2E) : Colors.white,
         borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
       child: Center(
         child: Column(
           children: [
-            Icon(Icons.info_outline, size: 48, color: Colors.grey.shade400),
+            Icon(
+              Icons.info_outline,
+              size: 48,
+              color: isDark ? Colors.white38 : Colors.grey.shade400,
+            ),
             const SizedBox(height: 12),
             Text(
               message,
               style: GoogleFonts.cairo(
                 fontSize: 14,
-                color: Colors.grey.shade600,
+                color: isDark ? Colors.white60 : Colors.grey.shade600,
               ),
             ),
           ],
@@ -589,7 +624,10 @@ class _LogProgressDialogState extends State<_LogProgressDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Dialog(
+      backgroundColor: isDark ? const Color(0xFF1A1D2E) : Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -602,29 +640,31 @@ class _LogProgressDialogState extends State<_LogProgressDialog> {
               style: GoogleFonts.cairo(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: const Color(0xFF0D1B4C),
+                color: isDark ? Colors.white : const Color(0xFF0D1B4C),
               ),
             ),
             const SizedBox(height: 20),
-            _buildField('السعرات المستهلكة', _caloriesCtrl, Icons.local_fire_department),
+            _buildField('السعرات المستهلكة', _caloriesCtrl, Icons.local_fire_department, isDark),
             const SizedBox(height: 12),
-            _buildField('أكواب الماء', _waterCtrl, Icons.water_drop),
+            _buildField('أكواب الماء', _waterCtrl, Icons.water_drop, isDark),
             const SizedBox(height: 12),
-            _buildField('الوزن (كجم)', _weightCtrl, Icons.scale),
+            _buildField('الوزن (كجم)', _weightCtrl, Icons.scale, isDark),
             const SizedBox(height: 12),
             TextField(
               controller: _notesCtrl,
+              style: GoogleFonts.cairo(color: isDark ? Colors.white : Colors.black87),
               decoration: InputDecoration(
                 labelText: 'ملاحظات',
-                labelStyle: GoogleFonts.cairo(),
+                labelStyle: GoogleFonts.cairo(
+                  color: isDark ? Colors.white60 : Colors.grey.shade600,
+                ),
                 filled: true,
-                fillColor: Colors.grey.shade50,
+                fillColor: isDark ? const Color(0xFF252838) : Colors.grey.shade50,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
               ),
-              style: GoogleFonts.cairo(),
               maxLines: 2,
             ),
             const SizedBox(height: 20),
@@ -634,6 +674,10 @@ class _LogProgressDialogState extends State<_LogProgressDialog> {
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(context),
                     style: OutlinedButton.styleFrom(
+                      foregroundColor: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C),
+                      side: BorderSide(
+                        color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C),
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -654,7 +698,7 @@ class _LogProgressDialogState extends State<_LogProgressDialog> {
                       });
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0D1B4C),
+                      backgroundColor: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -671,22 +715,27 @@ class _LogProgressDialogState extends State<_LogProgressDialog> {
     );
   }
 
-  Widget _buildField(String label, TextEditingController controller, IconData icon) {
+  Widget _buildField(String label, TextEditingController controller, IconData icon, bool isDark) {
     return TextField(
       controller: controller,
       keyboardType: TextInputType.number,
+      style: GoogleFonts.mulish(
+        fontWeight: FontWeight.w600,
+        color: isDark ? Colors.white : Colors.black87,
+      ),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: GoogleFonts.cairo(),
-        prefixIcon: Icon(icon),
+        labelStyle: GoogleFonts.cairo(
+          color: isDark ? Colors.white60 : Colors.grey.shade600,
+        ),
+        prefixIcon: Icon(icon, color: isDark ? Colors.white60 : Colors.grey.shade600),
         filled: true,
-        fillColor: Colors.grey.shade50,
+        fillColor: isDark ? const Color(0xFF252838) : Colors.grey.shade50,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
       ),
-      style: GoogleFonts.mulish(fontWeight: FontWeight.w600),
     );
   }
 }

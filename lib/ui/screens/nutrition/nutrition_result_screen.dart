@@ -1,4 +1,4 @@
-// lib/ui/screens/nutrition/nutrition_result_screen.dart (IMPROVED)
+// lib/ui/screens/nutrition/nutrition_result_screen.dart (DARK MODE ENABLED)
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
@@ -31,46 +31,52 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final weeklyPlan = (widget.plan['weeklyPlan'] as List?) ?? [];
 
     if (weeklyPlan.isEmpty) {
       return Scaffold(
+        backgroundColor: isDark ? const Color(0xFF0F1120) : Colors.grey.shade50,
         appBar: AppBar(
-          backgroundColor: const Color(0xFF0D1B4C),
+          backgroundColor: isDark ? const Color(0xFF1A1D2E) : const Color(0xFF0D1B4C),
           title: Text('خطتك الغذائية', style: GoogleFonts.cairo()),
         ),
         body: Center(
           child: Text(
             'لا توجد بيانات',
-            style: GoogleFonts.cairo(fontSize: 18),
+            style: GoogleFonts.cairo(
+              fontSize: 18,
+              color: isDark ? Colors.white70 : Colors.black87,
+            ),
           ),
         ),
       );
     }
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      appBar: _buildAppBar(),
+      backgroundColor: isDark ? const Color(0xFF0F1120) : Colors.grey.shade50,
+      appBar: _buildAppBar(isDark),
       body: _currentTab == 0
-          ? _buildPlanView(weeklyPlan)
+          ? _buildPlanView(weeklyPlan, isDark)
           : _currentTab == 1
               ? ProgressTrackerScreen(
                   targetCalories: widget.calculations['targetCalories'],
                 )
               : IFTimerScreen(),
-      bottomNavigationBar: _buildBottomNav(),
-      floatingActionButton: _currentTab == 0 ? _buildFloatingActions() : null,
+      bottomNavigationBar: _buildBottomNav(isDark),
+      floatingActionButton: _currentTab == 0 ? _buildFloatingActions(isDark) : null,
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
+  PreferredSizeWidget _buildAppBar(bool isDark) {
     return AppBar(
-      backgroundColor: const Color(0xFF0D1B4C),
+      backgroundColor: isDark ? const Color(0xFF1A1D2E) : const Color(0xFF0D1B4C),
       title: Text(
         'خطتك الغذائية',
-        style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
+        style: GoogleFonts.cairo(fontWeight: FontWeight.bold, color: Colors.white),
       ),
       elevation: 0,
+      iconTheme: const IconThemeData(color: Colors.white),
       actions: [
         IconButton(
           icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
@@ -83,9 +89,10 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
         ),
         PopupMenuButton<String>(
           icon: const Icon(Icons.more_vert, color: Colors.white),
+          color: isDark ? const Color(0xFF1A1D2E) : Colors.white,
           onSelected: (value) {
             if (value == 'delete') {
-              _showDeleteConfirmation();
+              _showDeleteConfirmation(isDark);
             }
           },
           itemBuilder: (context) => [
@@ -108,12 +115,13 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
     );
   }
 
-  Widget _buildBottomNav() {
+  Widget _buildBottomNav(bool isDark) {
     return BottomNavigationBar(
       currentIndex: _currentTab,
       onTap: (index) => setState(() => _currentTab = index),
-      selectedItemColor: const Color(0xFF0D1B4C),
-      unselectedItemColor: Colors.grey,
+      selectedItemColor: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C),
+      unselectedItemColor: isDark ? Colors.white54 : Colors.grey,
+      backgroundColor: isDark ? const Color(0xFF1A1D2E) : Colors.white,
       selectedLabelStyle: GoogleFonts.cairo(fontWeight: FontWeight.bold),
       unselectedLabelStyle: GoogleFonts.cairo(),
       items: const [
@@ -133,7 +141,7 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
     );
   }
 
-  Widget _buildFloatingActions() {
+  Widget _buildFloatingActions(bool isDark) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
@@ -148,7 +156,7 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
             );
           },
           backgroundColor: Colors.orange.shade400,
-          child: const Icon(Icons.lightbulb_outline),
+          child: const Icon(Icons.lightbulb_outline, color: Colors.white),
         ),
         const SizedBox(height: 12),
         FloatingActionButton(
@@ -159,47 +167,46 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
               builder: (_) => const AIChatDialog(),
             );
           },
-          backgroundColor: const Color(0xFF0D1B4C),
-          child: const Icon(Icons.chat),
+          backgroundColor: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C),
+          child: const Icon(Icons.chat, color: Colors.white),
         ),
       ],
     );
   }
 
-  Widget _buildPlanView(List weeklyPlan) {
+  Widget _buildPlanView(List weeklyPlan, bool isDark) {
     return SingleChildScrollView(
       child: Column(
         children: [
-          _buildCaloriesHeader(),
+          _buildCaloriesHeader(isDark),
           const SizedBox(height: 20),
-          _buildMacrosCards(),
+          _buildMacrosCards(isDark),
           const SizedBox(height: 20),
-          _buildQuickActions(),
+          _buildQuickActions(isDark),
           const SizedBox(height: 20),
-          _buildDaySelector(weeklyPlan),
+          _buildDaySelector(weeklyPlan, isDark),
           const SizedBox(height: 20),
           if (weeklyPlan.length > _selectedDay)
-            _buildMealsSection(weeklyPlan[_selectedDay]),
+            _buildMealsSection(weeklyPlan[_selectedDay], isDark),
           const SizedBox(height: 20),
-          _buildTipsSection(),
+          _buildTipsSection(isDark),
           const SizedBox(height: 20),
-          _buildShoppingListSection(),
+          _buildShoppingListSection(isDark),
           const SizedBox(height: 100),
         ],
       ),
     );
   }
 
-  Widget _buildCaloriesHeader() {
+  Widget _buildCaloriesHeader(bool isDark) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            const Color(0xFF0D1B4C),
-            const Color(0xFF1a2d6e),
-          ],
+          colors: isDark
+              ? [const Color(0xFF1A1D2E), const Color(0xFF252838)]
+              : [const Color(0xFF0D1B4C), const Color(0xFF1a2d6e)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -209,7 +216,7 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0D1B4C).withOpacity(0.3),
+            color: (isDark ? Colors.black : const Color(0xFF0D1B4C)).withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -255,7 +262,7 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
     );
   }
 
-  Widget _buildMacrosCards() {
+  Widget _buildMacrosCards(bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
@@ -267,6 +274,7 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
               Icons.egg_outlined,
               Colors.red.shade400,
               Colors.red.shade50,
+              isDark,
             ),
           ),
           const SizedBox(width: 12),
@@ -277,6 +285,7 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
               Icons.rice_bowl_outlined,
               Colors.orange.shade400,
               Colors.orange.shade50,
+              isDark,
             ),
           ),
           const SizedBox(width: 12),
@@ -287,6 +296,7 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
               Icons.water_drop_outlined,
               Colors.blue.shade400,
               Colors.blue.shade50,
+              isDark,
             ),
           ),
         ],
@@ -294,15 +304,15 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
     );
   }
 
-  Widget _buildMacroCard(String title, String value, IconData icon, Color color, Color bgColor) {
+  Widget _buildMacroCard(String title, String value, IconData icon, Color color, Color bgColor, bool isDark) {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1A1D2E) : Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -313,7 +323,7 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: bgColor,
+              color: isDark ? color.withOpacity(0.2) : bgColor,
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 28),
@@ -323,7 +333,7 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
             title,
             style: GoogleFonts.cairo(
               fontSize: 12,
-              color: Colors.grey.shade600,
+              color: isDark ? Colors.white70 : Colors.grey.shade600,
             ),
           ),
           const SizedBox(height: 4),
@@ -332,7 +342,7 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
             style: GoogleFonts.mulish(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: const Color(0xFF0D1B4C),
+              color: isDark ? Colors.white : const Color(0xFF0D1B4C),
             ),
           ),
         ],
@@ -340,7 +350,7 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
     );
   }
 
-  Widget _buildQuickActions() {
+  Widget _buildQuickActions(bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
@@ -350,6 +360,7 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
               'اقترح وجبة',
               Icons.lightbulb_outline,
               Colors.orange.shade400,
+              isDark,
               () {
                 showDialog(
                   context: context,
@@ -365,7 +376,8 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
             child: _buildActionButton(
               'اسأل خبير',
               Icons.chat_bubble_outline,
-              const Color(0xFF0D1B4C),
+              isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C),
+              isDark,
               () {
                 showDialog(
                   context: context,
@@ -379,12 +391,12 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
     );
   }
 
-  Widget _buildActionButton(String text, IconData icon, Color color, VoidCallback onPressed) {
+  Widget _buildActionButton(String text, IconData icon, Color color, bool isDark, VoidCallback onPressed) {
     return Material(
-      color: Colors.white,
+      color: isDark ? const Color(0xFF1A1D2E) : Colors.white,
       borderRadius: BorderRadius.circular(16),
       elevation: 2,
-      shadowColor: Colors.black.withOpacity(0.1),
+      shadowColor: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
       child: InkWell(
         onTap: onPressed,
         borderRadius: BorderRadius.circular(16),
@@ -410,7 +422,7 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
     );
   }
 
-  Widget _buildDaySelector(List weeklyPlan) {
+  Widget _buildDaySelector(List weeklyPlan, bool isDark) {
     return SizedBox(
       height: 70,
       child: ListView.builder(
@@ -429,19 +441,18 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
               decoration: BoxDecoration(
                 gradient: isSelected
                     ? LinearGradient(
-                        colors: [
-                          const Color(0xFF0D1B4C),
-                          const Color(0xFF1a2d6e),
-                        ],
+                        colors: isDark
+                            ? [const Color(0xFF60A5FA), const Color(0xFF3B82F6)]
+                            : [const Color(0xFF0D1B4C), const Color(0xFF1a2d6e)],
                       )
                     : null,
-                color: isSelected ? null : Colors.white,
+                color: isSelected ? null : (isDark ? const Color(0xFF1A1D2E) : Colors.white),
                 borderRadius: BorderRadius.circular(18),
                 boxShadow: [
                   BoxShadow(
                     color: isSelected
-                        ? const Color(0xFF0D1B4C).withOpacity(0.3)
-                        : Colors.black.withOpacity(0.05),
+                        ? (isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C)).withOpacity(0.3)
+                        : Colors.black.withOpacity(isDark ? 0.3 : 0.05),
                     blurRadius: isSelected ? 15 : 8,
                     offset: Offset(0, isSelected ? 6 : 3),
                   ),
@@ -455,7 +466,9 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
                     style: GoogleFonts.cairo(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
-                      color: isSelected ? Colors.white : const Color(0xFF0D1B4C),
+                      color: isSelected
+                          ? Colors.white
+                          : (isDark ? Colors.white : const Color(0xFF0D1B4C)),
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -463,7 +476,9 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
                     'يوم ${day['day']}',
                     style: GoogleFonts.cairo(
                       fontSize: 11,
-                      color: isSelected ? Colors.white70 : Colors.grey.shade600,
+                      color: isSelected
+                          ? Colors.white70
+                          : (isDark ? Colors.white60 : Colors.grey.shade600),
                     ),
                   ),
                 ],
@@ -475,7 +490,7 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
     );
   }
 
-  Widget _buildMealsSection(Map<String, dynamic> dayData) {
+  Widget _buildMealsSection(Map<String, dynamic> dayData, bool isDark) {
     final meals = (dayData['meals'] as Map<String, dynamic>?) ?? {};
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -487,33 +502,33 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
             style: GoogleFonts.cairo(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: const Color(0xFF0D1B4C),
+              color: isDark ? Colors.white : const Color(0xFF0D1B4C),
             ),
           ),
           const SizedBox(height: 14),
           if (meals.containsKey('breakfast'))
-            _buildMealCard('إفطار', meals['breakfast'], Icons.wb_sunny, Colors.orange.shade400),
+            _buildMealCard('إفطار', meals['breakfast'], Icons.wb_sunny, Colors.orange.shade400, isDark),
           if (meals.containsKey('lunch'))
-            _buildMealCard('غداء', meals['lunch'], Icons.restaurant, Colors.green.shade400),
+            _buildMealCard('غداء', meals['lunch'], Icons.restaurant, Colors.green.shade400, isDark),
           if (meals.containsKey('dinner'))
-            _buildMealCard('عشاء', meals['dinner'], Icons.nightlight, Colors.purple.shade400),
+            _buildMealCard('عشاء', meals['dinner'], Icons.nightlight, Colors.purple.shade400, isDark),
         ],
       ),
     );
   }
 
-  Widget _buildMealCard(String mealType, dynamic meal, IconData icon, Color color) {
+  Widget _buildMealCard(String mealType, dynamic meal, IconData icon, Color color, bool isDark) {
     if (meal == null || meal is! Map<String, dynamic>) return const SizedBox();
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1A1D2E) : Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -541,7 +556,7 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
                       mealType,
                       style: GoogleFonts.cairo(
                         fontSize: 13,
-                        color: Colors.grey.shade600,
+                        color: isDark ? Colors.white60 : Colors.grey.shade600,
                       ),
                     ),
                     Text(
@@ -549,7 +564,7 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
                       style: GoogleFonts.cairo(
                         fontSize: 17,
                         fontWeight: FontWeight.bold,
-                        color: const Color(0xFF0D1B4C),
+                        color: isDark ? Colors.white : const Color(0xFF0D1B4C),
                       ),
                     ),
                   ],
@@ -573,15 +588,15 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          Divider(color: Colors.grey.shade200),
+          Divider(color: isDark ? Colors.white12 : Colors.grey.shade200, height: 1),
           const SizedBox(height: 8),
           Row(
             children: [
-              _buildNutrientTag('P', meal['protein'], Colors.red.shade400),
+              _buildNutrientTag('P', meal['protein'], Colors.red.shade400, isDark),
               const SizedBox(width: 8),
-              _buildNutrientTag('C', meal['carbs'], Colors.orange.shade400),
+              _buildNutrientTag('C', meal['carbs'], Colors.orange.shade400, isDark),
               const SizedBox(width: 8),
-              _buildNutrientTag('F', meal['fats'], Colors.blue.shade400),
+              _buildNutrientTag('F', meal['fats'], Colors.blue.shade400, isDark),
             ],
           ),
         ],
@@ -589,11 +604,11 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
     );
   }
 
-  Widget _buildNutrientTag(String label, dynamic value, Color color) {
+  Widget _buildNutrientTag(String label, dynamic value, Color color, bool isDark) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withOpacity(isDark ? 0.2 : 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
@@ -607,7 +622,7 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
     );
   }
 
-  Widget _buildTipsSection() {
+  Widget _buildTipsSection(bool isDark) {
     final tips = (widget.plan['tips'] as List?) ?? [];
     if (tips.isEmpty) return const SizedBox();
 
@@ -616,8 +631,15 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? const Color(0xFF1A1D2E) : Colors.white,
           borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -631,7 +653,7 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
                   style: GoogleFonts.cairo(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF0D1B4C),
+                    color: isDark ? Colors.white : const Color(0xFF0D1B4C),
                   ),
                 ),
               ],
@@ -647,7 +669,11 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
                       Expanded(
                         child: Text(
                           tip.toString(),
-                          style: GoogleFonts.cairo(fontSize: 14, height: 1.5),
+                          style: GoogleFonts.cairo(
+                            fontSize: 14,
+                            height: 1.5,
+                            color: isDark ? Colors.white70 : Colors.black87,
+                          ),
                         ),
                       ),
                     ],
@@ -659,7 +685,7 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
     );
   }
 
-  Widget _buildShoppingListSection() {
+  Widget _buildShoppingListSection(bool isDark) {
     final shoppingList = (widget.plan['shoppingList'] as List?) ?? [];
     if (shoppingList.isEmpty) return const SizedBox();
 
@@ -668,8 +694,15 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? const Color(0xFF1A1D2E) : Colors.white,
           borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -683,7 +716,7 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
                   style: GoogleFonts.cairo(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF0D1B4C),
+                    color: isDark ? Colors.white : const Color(0xFF0D1B4C),
                   ),
                 ),
               ],
@@ -696,14 +729,14 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
                 return Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
+                    color: isDark ? Colors.blue.shade900.withOpacity(0.3) : Colors.blue.shade50,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     item.toString(),
                     style: GoogleFonts.cairo(
                       fontSize: 13,
-                      color: Colors.blue.shade700,
+                      color: isDark ? Colors.blue.shade300 : Colors.blue.shade700,
                     ),
                   ),
                 );
@@ -715,23 +748,33 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
     );
   }
 
-  Future<void> _showDeleteConfirmation() async {
+  Future<void> _showDeleteConfirmation(bool isDark) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF1A1D2E) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           'تأكيد إعادة الإنشاء',
-          style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
+          style: GoogleFonts.cairo(
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : Colors.black87,
+          ),
         ),
         content: Text(
           'هل تريد حذف خطتك الحالية وإنشاء خطة جديدة من البداية؟',
-          style: GoogleFonts.cairo(fontSize: 14),
+          style: GoogleFonts.cairo(
+            fontSize: 14,
+            color: isDark ? Colors.white70 : Colors.black87,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('إلغاء', style: GoogleFonts.cairo(color: Colors.grey)),
+            child: Text(
+              'إلغاء',
+              style: GoogleFonts.cairo(color: isDark ? Colors.white60 : Colors.grey),
+            ),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
@@ -739,8 +782,10 @@ class _NutritionResultScreenState extends State<NutritionResultScreen> {
               backgroundColor: Colors.orange.shade400,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: Text('نعم، أعد الإنشاء',
-                style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
+            child: Text(
+              'نعم، أعد الإنشاء',
+              style: GoogleFonts.cairo(fontWeight: FontWeight.bold, color: Colors.white),
+            ),
           ),
         ],
       ),

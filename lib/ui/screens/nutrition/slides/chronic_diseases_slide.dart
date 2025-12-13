@@ -1,4 +1,3 @@
-// lib/ui/screens/nutrition/slides/chronic_diseases_slide.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -16,38 +15,16 @@ class ChronicDiseasesSlide extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     final diseases = [
       {'key': 'diabetes', 'title': 'السكري', 'icon': Icons.medical_services},
-      {
-        'key': 'hypertension',
-        'title': 'ضغط الدم المرتفع',
-        'icon': Icons.favorite
-      },
-      {
-        'key': 'high_cholesterol',
-        'title': 'الكوليسترول المرتفع',
-        'icon': Icons.bloodtype
-      },
-      {
-        'key': 'kidney_disease',
-        'title': 'مشاكل في الكلى',
-        'icon': Icons.water_drop
-      },
-      {
-        'key': 'heart_disease',
-        'title': 'أمراض القلب',
-        'icon': Icons.monitor_heart
-      },
-      {
-        'key': 'thyroid',
-        'title': 'مشاكل في الغدة الدرقية',
-        'icon': Icons.health_and_safety
-      },
-      {
-        'key': 'none',
-        'title': 'لا أعاني من أي مرض',
-        'icon': Icons.check_circle_outline
-      },
+      {'key': 'hypertension', 'title': 'ضغط الدم المرتفع', 'icon': Icons.favorite},
+      {'key': 'high_cholesterol', 'title': 'الكوليسترول المرتفع', 'icon': Icons.bloodtype},
+      {'key': 'kidney_disease', 'title': 'مشاكل في الكلى', 'icon': Icons.water_drop},
+      {'key': 'heart_disease', 'title': 'أمراض القلب', 'icon': Icons.monitor_heart},
+      {'key': 'thyroid', 'title': 'مشاكل في الغدة الدرقية', 'icon': Icons.health_and_safety},
+      {'key': 'none', 'title': 'لا أعاني من أي مرض', 'icon': Icons.check_circle_outline},
     ];
 
     return Padding(
@@ -59,7 +36,7 @@ class ChronicDiseasesSlide extends StatelessWidget {
             style: GoogleFonts.cairo(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: const Color(0xFF0D1B4C),
+              color: isDark ? Colors.white : const Color(0xFF0D1B4C),
             ),
           ),
           const SizedBox(height: 8),
@@ -67,7 +44,7 @@ class ChronicDiseasesSlide extends StatelessWidget {
             'سنأخذ ذلك بعين الاعتبار في خطتك الغذائية',
             style: GoogleFonts.cairo(
               fontSize: 14,
-              color: Colors.grey.shade600,
+              color: isDark ? Colors.white70 : Colors.grey.shade600,
             ),
           ),
           const SizedBox(height: 30),
@@ -86,19 +63,18 @@ class ChronicDiseasesSlide extends StatelessWidget {
                     opacity: isDisabled ? 0.4 : 1.0,
                     child: Material(
                       color: isSelected
-                          ? const Color(0xFF0D1B4C)
-                          : Colors.white,
+                          ? (isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C))
+                          : (isDark ? const Color(0xFF1A1D2E) : Colors.white),
                       borderRadius: BorderRadius.circular(16),
                       elevation: isSelected ? 4 : 2,
-                      shadowColor: Colors.black.withOpacity(0.1),
+                      shadowColor: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
                       child: InkWell(
                         onTap: isDisabled
                             ? null
                             : () {
                                 if (key == 'none' && !isSelected) {
                                   for (var d in diseases) {
-                                    if (selectedDiseases
-                                        .contains(d['key'])) {
+                                    if (selectedDiseases.contains(d['key'])) {
                                       onToggle(d['key'] as String, false);
                                     }
                                   }
@@ -124,15 +100,16 @@ class ChronicDiseasesSlide extends StatelessWidget {
                                 decoration: BoxDecoration(
                                   color: isSelected
                                       ? Colors.white.withOpacity(0.2)
-                                      : const Color(0xFF0D1B4C)
-                                          .withOpacity(0.05),
+                                      : (isDark 
+                                          ? const Color(0xFF60A5FA).withOpacity(0.1)
+                                          : const Color(0xFF0D1B4C).withOpacity(0.05)),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Icon(
                                   disease['icon'] as IconData,
                                   color: isSelected
                                       ? Colors.white
-                                      : const Color(0xFF0D1B4C),
+                                      : (isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C)),
                                   size: 24,
                                 ),
                               ),
@@ -142,25 +119,19 @@ class ChronicDiseasesSlide extends StatelessWidget {
                                   disease['title'] as String,
                                   style: GoogleFonts.cairo(
                                     fontSize: 16,
-                                    fontWeight: isSelected
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                                     color: isSelected
                                         ? Colors.white
-                                        : const Color(0xFF0D1B4C),
+                                        : (isDark ? Colors.white : const Color(0xFF0D1B4C)),
                                   ),
                                 ),
                               ),
                               if (isSelected)
-                                const Icon(
-                                  Icons.check_circle,
-                                  color: Colors.white,
-                                  size: 24,
-                                )
+                                const Icon(Icons.check_circle, color: Colors.white, size: 24)
                               else
                                 Icon(
                                   Icons.circle_outlined,
-                                  color: Colors.grey.shade400,
+                                  color: isDark ? Colors.white38 : Colors.grey.shade400,
                                   size: 24,
                                 ),
                             ],
@@ -178,7 +149,7 @@ class ChronicDiseasesSlide extends StatelessWidget {
             child: ElevatedButton(
               onPressed: onNext,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0D1B4C),
+                backgroundColor: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(

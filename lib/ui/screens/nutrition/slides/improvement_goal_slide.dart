@@ -18,20 +18,14 @@ class ImprovementGoalSlide extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     final goals = [
       {'value': 'طاقتي اليومية', 'title': 'طاقتي اليومية', 'icon': Icons.bolt},
       {'value': 'شكل جسمي', 'title': 'شكل جسمي', 'icon': Icons.fitness_center},
       {'value': 'جودة نومي', 'title': 'جودة نومي', 'icon': Icons.bedtime},
-      {
-        'value': 'عاداتي الغذائية',
-        'title': 'عاداتي الغذائية',
-        'icon': Icons.restaurant
-      },
-      {
-        'value': 'لياقتي العامة',
-        'title': 'لياقتي العامة',
-        'icon': Icons.monitor_heart
-      },
+      {'value': 'عاداتي الغذائية', 'title': 'عاداتي الغذائية', 'icon': Icons.restaurant},
+      {'value': 'لياقتي العامة', 'title': 'لياقتي العامة', 'icon': Icons.monitor_heart},
     ];
 
     return Padding(
@@ -43,7 +37,7 @@ class ImprovementGoalSlide extends StatelessWidget {
             style: GoogleFonts.cairo(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: const Color(0xFF0D1B4C),
+              color: isDark ? Colors.white : const Color(0xFF0D1B4C),
             ),
           ),
           const SizedBox(height: 30),
@@ -55,11 +49,12 @@ class ImprovementGoalSlide extends StatelessWidget {
                   duration: const Duration(milliseconds: 200),
                   margin: const EdgeInsets.only(bottom: 16),
                   child: Material(
-                    color:
-                        isSelected ? const Color(0xFF0D1B4C) : Colors.white,
+                    color: isSelected
+                        ? (isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C))
+                        : (isDark ? const Color(0xFF1A1D2E) : Colors.white),
                     borderRadius: BorderRadius.circular(18),
                     elevation: isSelected ? 4 : 2,
-                    shadowColor: Colors.black.withOpacity(0.1),
+                    shadowColor: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
                     child: InkWell(
                       onTap: () => onSelect(g['value'] as String),
                       borderRadius: BorderRadius.circular(18),
@@ -69,8 +64,9 @@ class ImprovementGoalSlide extends StatelessWidget {
                           children: [
                             Icon(
                               g['icon'] as IconData,
-                              color:
-                                  isSelected ? Colors.white : Colors.grey,
+                              color: isSelected
+                                  ? Colors.white
+                                  : (isDark ? Colors.white60 : Colors.grey),
                             ),
                             const SizedBox(width: 16),
                             Text(
@@ -79,18 +75,13 @@ class ImprovementGoalSlide extends StatelessWidget {
                                 fontSize: 18,
                                 color: isSelected
                                     ? Colors.white
-                                    : const Color(0xFF0D1B4C),
-                                fontWeight: isSelected
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
+                                    : (isDark ? Colors.white : const Color(0xFF0D1B4C)),
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                               ),
                             ),
                             const Spacer(),
                             if (isSelected)
-                              const Icon(
-                                Icons.check_circle,
-                                color: Colors.white,
-                              ),
+                              const Icon(Icons.check_circle, color: Colors.white),
                           ],
                         ),
                       ),
@@ -103,7 +94,7 @@ class ImprovementGoalSlide extends StatelessWidget {
           ElevatedButton(
             onPressed: isLoading ? null : onNext,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0D1B4C),
+              backgroundColor: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C),
               minimumSize: const Size(double.infinity, 56),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),

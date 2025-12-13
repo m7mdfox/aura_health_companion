@@ -1,4 +1,6 @@
-// lib/ui/screens/nutrition/widgets/if_timer_screen.dart
+// ============================================================================
+// lib/ui/screens/nutrition/widgets/if_timer_screen.dart (DARK MODE ADDED)
+// ============================================================================
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';
@@ -89,7 +91,6 @@ class _IFTimerScreenState extends State<IFTimerScreen> {
           _elapsed = DateTime.now().difference(_fastingStartTime!);
         });
 
-        // Check if fasting is complete
         if (_elapsed >= _fastingDuration) {
           _completeFasting();
         }
@@ -131,6 +132,7 @@ class _IFTimerScreenState extends State<IFTimerScreen> {
   }
 
   void _showNotification(String title, String message) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Column(
@@ -147,7 +149,7 @@ class _IFTimerScreenState extends State<IFTimerScreen> {
             Text(message, style: GoogleFonts.cairo()),
           ],
         ),
-        backgroundColor: const Color(0xFF0D1B4C),
+        backgroundColor: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C),
         duration: const Duration(seconds: 3),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -157,6 +159,7 @@ class _IFTimerScreenState extends State<IFTimerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final progress = _elapsed.inSeconds / _fastingDuration.inSeconds;
     final remainingDuration = _fastingDuration - _elapsed;
     final isComplete = progress >= 1.0;
@@ -165,29 +168,29 @@ class _IFTimerScreenState extends State<IFTimerScreen> {
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
-          _buildPlanSelector(),
+          _buildPlanSelector(isDark),
           const SizedBox(height: 24),
-          _buildTimerCard(progress, remainingDuration, isComplete),
+          _buildTimerCard(progress, remainingDuration, isComplete, isDark),
           const SizedBox(height: 24),
-          _buildControlButtons(),
+          _buildControlButtons(isDark),
           const SizedBox(height: 24),
-          _buildPhaseIndicator(progress),
+          _buildPhaseIndicator(progress, isDark),
           const SizedBox(height: 24),
-          _buildWeeklyProgress(),
+          _buildWeeklyProgress(isDark),
         ],
       ),
     );
   }
 
-  Widget _buildPlanSelector() {
+  Widget _buildPlanSelector(bool isDark) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1A1D2E) : Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -198,14 +201,17 @@ class _IFTimerScreenState extends State<IFTimerScreen> {
         children: [
           Row(
             children: [
-              Icon(Icons.schedule, color: Colors.purple.shade600),
+              Icon(
+                Icons.schedule,
+                color: isDark ? const Color(0xFFBB86FC) : Colors.purple.shade600,
+              ),
               const SizedBox(width: 8),
               Text(
                 'خطة الصيام',
                 style: GoogleFonts.cairo(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF0D1B4C),
+                  color: isDark ? Colors.white : const Color(0xFF0D1B4C),
                 ),
               ),
             ],
@@ -221,7 +227,7 @@ class _IFTimerScreenState extends State<IFTimerScreen> {
                   plan,
                   style: GoogleFonts.cairo(
                     fontWeight: FontWeight.bold,
-                    color: isSelected ? Colors.white : const Color(0xFF0D1B4C),
+                    color: isSelected ? Colors.white : (isDark ? Colors.white : const Color(0xFF0D1B4C)),
                   ),
                 ),
                 selected: isSelected,
@@ -234,8 +240,8 @@ class _IFTimerScreenState extends State<IFTimerScreen> {
                         _saveState();
                       }
                     : null,
-                selectedColor: Colors.purple.shade600,
-                backgroundColor: Colors.grey.shade100,
+                selectedColor: isDark ? const Color(0xFFBB86FC) : Colors.purple.shade600,
+                backgroundColor: isDark ? const Color(0xFF252838) : Colors.grey.shade100,
                 elevation: isSelected ? 4 : 0,
               );
             }).toList(),
@@ -245,7 +251,7 @@ class _IFTimerScreenState extends State<IFTimerScreen> {
     );
   }
 
-  Widget _buildTimerCard(double progress, Duration remaining, bool isComplete) {
+  Widget _buildTimerCard(double progress, Duration remaining, bool isComplete, bool isDark) {
     final hours = remaining.inHours;
     final minutes = remaining.inMinutes.remainder(60);
     final seconds = remaining.inSeconds.remainder(60);
@@ -254,17 +260,16 @@ class _IFTimerScreenState extends State<IFTimerScreen> {
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            Colors.purple.shade700,
-            Colors.purple.shade500,
-          ],
+          colors: isDark
+              ? [const Color(0xFFBB86FC), const Color(0xFF9C6FDB)]
+              : [Colors.purple.shade700, Colors.purple.shade500],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
-            color: Colors.purple.withOpacity(0.3),
+            color: (isDark ? const Color(0xFFBB86FC) : Colors.purple).withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -316,7 +321,7 @@ class _IFTimerScreenState extends State<IFTimerScreen> {
                       ),
                     ),
                   ] else if (isComplete) ...[
-                    Icon(Icons.check_circle, color: Colors.white, size: 60),
+                    const Icon(Icons.check_circle, color: Colors.white, size: 60),
                     const SizedBox(height: 8),
                     Text(
                       'مكتمل!',
@@ -327,7 +332,7 @@ class _IFTimerScreenState extends State<IFTimerScreen> {
                       ),
                     ),
                   ] else ...[
-                    Icon(Icons.timer_outlined, color: Colors.white, size: 60),
+                    const Icon(Icons.timer_outlined, color: Colors.white, size: 60),
                     const SizedBox(height: 8),
                     Text(
                       _selectedPlan,
@@ -364,7 +369,7 @@ class _IFTimerScreenState extends State<IFTimerScreen> {
     );
   }
 
-  Widget _buildControlButtons() {
+  Widget _buildControlButtons(bool isDark) {
     return Row(
       children: [
         if (_isFasting) ...[
@@ -404,34 +409,41 @@ class _IFTimerScreenState extends State<IFTimerScreen> {
     );
   }
 
-  Widget _buildPhaseIndicator(double progress) {
+  Widget _buildPhaseIndicator(double progress, bool isDark) {
     String phase;
     Color phaseColor;
     IconData phaseIcon;
 
     if (progress < 0.25) {
       phase = 'بداية الصيام';
-      phaseColor = Colors.blue.shade600;
+      phaseColor = isDark ? const Color(0xFF64B5F6) : Colors.blue.shade600;
       phaseIcon = Icons.wb_twilight;
     } else if (progress < 0.5) {
       phase = 'حرق السكر';
-      phaseColor = Colors.orange.shade600;
+      phaseColor = isDark ? const Color(0xFFFFB74D) : Colors.orange.shade600;
       phaseIcon = Icons.local_fire_department;
     } else if (progress < 0.75) {
       phase = 'حرق الدهون';
-      phaseColor = Colors.red.shade600;
+      phaseColor = isDark ? const Color(0xFFEF5350) : Colors.red.shade600;
       phaseIcon = Icons.whatshot;
     } else {
       phase = 'مرحلة متقدمة';
-      phaseColor = Colors.purple.shade600;
+      phaseColor = isDark ? const Color(0xFFBB86FC) : Colors.purple.shade600;
       phaseIcon = Icons.rocket_launch;
     }
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1A1D2E) : Colors.white,
         borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -454,7 +466,7 @@ class _IFTimerScreenState extends State<IFTimerScreen> {
                       'المرحلة الحالية',
                       style: GoogleFonts.cairo(
                         fontSize: 12,
-                        color: Colors.grey.shade600,
+                        color: isDark ? Colors.white60 : Colors.grey.shade600,
                       ),
                     ),
                     Text(
@@ -462,7 +474,7 @@ class _IFTimerScreenState extends State<IFTimerScreen> {
                       style: GoogleFonts.cairo(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: const Color(0xFF0D1B4C),
+                        color: isDark ? Colors.white : const Color(0xFF0D1B4C),
                       ),
                     ),
                   ],
@@ -471,27 +483,27 @@ class _IFTimerScreenState extends State<IFTimerScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          _buildPhaseTimeline(progress),
+          _buildPhaseTimeline(progress, isDark),
         ],
       ),
     );
   }
 
-  Widget _buildPhaseTimeline(double progress) {
+  Widget _buildPhaseTimeline(double progress, bool isDark) {
     return Row(
       children: [
-        _buildPhaseStep('بداية', progress > 0, progress >= 0.25),
-        _buildPhaseConnection(progress >= 0.25),
-        _buildPhaseStep('سكر', progress >= 0.25, progress >= 0.5),
-        _buildPhaseConnection(progress >= 0.5),
-        _buildPhaseStep('دهون', progress >= 0.5, progress >= 0.75),
-        _buildPhaseConnection(progress >= 0.75),
-        _buildPhaseStep('متقدم', progress >= 0.75, progress >= 1.0),
+        _buildPhaseStep('بداية', progress > 0, progress >= 0.25, isDark),
+        _buildPhaseConnection(progress >= 0.25, isDark),
+        _buildPhaseStep('سكر', progress >= 0.25, progress >= 0.5, isDark),
+        _buildPhaseConnection(progress >= 0.5, isDark),
+        _buildPhaseStep('دهون', progress >= 0.5, progress >= 0.75, isDark),
+        _buildPhaseConnection(progress >= 0.75, isDark),
+        _buildPhaseStep('متقدم', progress >= 0.75, progress >= 1.0, isDark),
       ],
     );
   }
 
-  Widget _buildPhaseStep(String label, bool isActive, bool isComplete) {
+  Widget _buildPhaseStep(String label, bool isActive, bool isComplete, bool isDark) {
     return Column(
       children: [
         Container(
@@ -501,8 +513,8 @@ class _IFTimerScreenState extends State<IFTimerScreen> {
             color: isComplete
                 ? Colors.green.shade500
                 : isActive
-                    ? Colors.purple.shade600
-                    : Colors.grey.shade300,
+                    ? (isDark ? const Color(0xFFBB86FC) : Colors.purple.shade600)
+                    : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
             shape: BoxShape.circle,
           ),
           child: Icon(
@@ -516,43 +528,57 @@ class _IFTimerScreenState extends State<IFTimerScreen> {
           label,
           style: GoogleFonts.cairo(
             fontSize: 10,
-            color: isActive ? const Color(0xFF0D1B4C) : Colors.grey.shade600,
+            color: isActive
+                ? (isDark ? Colors.white : const Color(0xFF0D1B4C))
+                : (isDark ? Colors.white60 : Colors.grey.shade600),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildPhaseConnection(bool isActive) {
+  Widget _buildPhaseConnection(bool isActive, bool isDark) {
     return Expanded(
       child: Container(
         height: 2,
         margin: const EdgeInsets.only(bottom: 20),
-        color: isActive ? Colors.purple.shade600 : Colors.grey.shade300,
+        color: isActive
+            ? (isDark ? const Color(0xFFBB86FC) : Colors.purple.shade600)
+            : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
       ),
     );
   }
 
-  Widget _buildWeeklyProgress() {
+  Widget _buildWeeklyProgress(bool isDark) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1A1D2E) : Colors.white,
         borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.calendar_today, color: Colors.blue.shade600),
+              Icon(
+                Icons.calendar_today,
+                color: isDark ? const Color(0xFF64B5F6) : Colors.blue.shade600,
+              ),
               const SizedBox(width: 8),
               Text(
                 'الأسبوع الحالي',
                 style: GoogleFonts.cairo(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF0D1B4C),
+                  color: isDark ? Colors.white : const Color(0xFF0D1B4C),
                 ),
               ),
             ],
@@ -562,7 +588,7 @@ class _IFTimerScreenState extends State<IFTimerScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: List.generate(7, (index) {
               final day = ['ح', 'ن', 'ث', 'ر', 'خ', 'ج', 'س'][index];
-              final isCompleted = index < 3; // Mock data
+              final isCompleted = index < 3;
               return Column(
                 children: [
                   Container(
@@ -571,7 +597,7 @@ class _IFTimerScreenState extends State<IFTimerScreen> {
                     decoration: BoxDecoration(
                       color: isCompleted
                           ? Colors.green.shade500
-                          : Colors.grey.shade200,
+                          : (isDark ? const Color(0xFF252838) : Colors.grey.shade200),
                       shape: BoxShape.circle,
                     ),
                     child: Center(
@@ -580,7 +606,9 @@ class _IFTimerScreenState extends State<IFTimerScreen> {
                         style: GoogleFonts.cairo(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
-                          color: isCompleted ? Colors.white : Colors.grey.shade600,
+                          color: isCompleted
+                              ? Colors.white
+                              : (isDark ? Colors.white60 : Colors.grey.shade600),
                         ),
                       ),
                     ),

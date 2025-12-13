@@ -25,6 +25,8 @@ class PhysicalDataSlide extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
@@ -34,20 +36,22 @@ class PhysicalDataSlide extends StatelessWidget {
             style: GoogleFonts.cairo(
               fontSize: 28,
               fontWeight: FontWeight.bold,
-              color: const Color(0xFF0D1B4C),
+              color: isDark ? Colors.white : const Color(0xFF0D1B4C),
             ),
           ),
           const SizedBox(height: 40),
           isLoading
-              ? const CircularProgressIndicator(color: Color(0xFF0D1B4C))
+              ? CircularProgressIndicator(
+                  color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C),
+                )
               : Container(
                   padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: isDark ? const Color(0xFF1A1D2E) : Colors.white,
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
                         blurRadius: 20,
                         offset: const Offset(0, 10),
                       ),
@@ -59,30 +63,34 @@ class PhysicalDataSlide extends StatelessWidget {
                         Icons.height,
                         '${height.toInt()} سم',
                         'الطول',
+                        isDark,
                       ),
                       const SizedBox(height: 20),
-                      Divider(color: Colors.grey.shade200),
+                      Divider(color: isDark ? Colors.white12 : Colors.grey.shade200),
                       const SizedBox(height: 20),
                       _buildDataRow(
                         Icons.fitness_center,
                         '${weight.toInt()} كجم',
                         'الوزن',
+                        isDark,
                       ),
                       const SizedBox(height: 20),
-                      Divider(color: Colors.grey.shade200),
+                      Divider(color: isDark ? Colors.white12 : Colors.grey.shade200),
                       const SizedBox(height: 20),
                       _buildDataRow(
                         Icons.cake,
                         '$age سنة',
                         'العمر',
+                        isDark,
                       ),
                       const SizedBox(height: 20),
-                      Divider(color: Colors.grey.shade200),
+                      Divider(color: isDark ? Colors.white12 : Colors.grey.shade200),
                       const SizedBox(height: 20),
                       _buildDataRow(
                         gender == 'male' ? Icons.male : Icons.female,
                         gender == 'male' ? 'ذكر' : 'أنثى',
                         'الجنس',
+                        isDark,
                       ),
                       const SizedBox(height: 32),
                       OutlinedButton.icon(
@@ -105,8 +113,10 @@ class PhysicalDataSlide extends StatelessWidget {
                           style: GoogleFonts.cairo(),
                         ),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF0D1B4C),
-                          side: const BorderSide(color: Color(0xFF0D1B4C)),
+                          foregroundColor: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C),
+                          side: BorderSide(
+                            color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C),
+                          ),
                           padding: const EdgeInsets.symmetric(
                             vertical: 12,
                             horizontal: 24,
@@ -120,22 +130,27 @@ class PhysicalDataSlide extends StatelessWidget {
                   ),
                 ),
           const Spacer(),
-          _buildNextButton(onNext),
+          _buildNextButton(onNext, isDark),
         ],
       ),
     );
   }
 
-  Widget _buildDataRow(IconData icon, String value, String label) {
+  Widget _buildDataRow(IconData icon, String value, String label, bool isDark) {
     return Row(
       children: [
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: const Color(0xFF0D1B4C).withOpacity(0.1),
+            color: (isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C))
+                .withOpacity(isDark ? 0.2 : 0.1),
             shape: BoxShape.circle,
           ),
-          child: Icon(icon, size: 24, color: const Color(0xFF0D1B4C)),
+          child: Icon(
+            icon,
+            size: 24,
+            color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C),
+          ),
         ),
         const SizedBox(width: 16),
         Column(
@@ -145,7 +160,7 @@ class PhysicalDataSlide extends StatelessWidget {
               label,
               style: GoogleFonts.cairo(
                 fontSize: 12,
-                color: Colors.grey.shade600,
+                color: isDark ? Colors.white60 : Colors.grey.shade600,
               ),
             ),
             Text(
@@ -153,7 +168,7 @@ class PhysicalDataSlide extends StatelessWidget {
               style: GoogleFonts.mulish(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: const Color(0xFF0D1B4C),
+                color: isDark ? Colors.white : const Color(0xFF0D1B4C),
               ),
             ),
           ],
@@ -162,14 +177,14 @@ class PhysicalDataSlide extends StatelessWidget {
     );
   }
 
-  Widget _buildNextButton(VoidCallback onPressed) {
+  Widget _buildNextButton(VoidCallback onPressed, bool isDark) {
     return SizedBox(
       width: double.infinity,
       child: TextButton(
         onPressed: onPressed,
         style: TextButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 16),
-          foregroundColor: const Color(0xFF0D1B4C),
+          foregroundColor: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,

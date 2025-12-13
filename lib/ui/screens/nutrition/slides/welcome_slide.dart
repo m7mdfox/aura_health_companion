@@ -14,6 +14,8 @@ class WelcomeSlide extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 30),
       child: Column(
@@ -30,7 +32,7 @@ class WelcomeSlide extends StatelessWidget {
             style: GoogleFonts.cairo(
               fontSize: 32,
               fontWeight: FontWeight.bold,
-              color: const Color(0xFF0D1B4C),
+              color: isDark ? Colors.white : const Color(0xFF0D1B4C),
             ),
           ),
           const SizedBox(height: 16),
@@ -39,7 +41,7 @@ class WelcomeSlide extends StatelessWidget {
             style: GoogleFonts.cairo(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: isDark ? Colors.white : Colors.black87,
             ),
             textAlign: TextAlign.center,
           ),
@@ -48,7 +50,7 @@ class WelcomeSlide extends StatelessWidget {
             'أجب على الأسئلة التالية لنبدأ رحلتك',
             style: GoogleFonts.cairo(
               fontSize: 16,
-              color: Colors.grey.shade600,
+              color: isDark ? Colors.white70 : Colors.grey.shade600,
             ),
             textAlign: TextAlign.center,
           ),
@@ -56,14 +58,15 @@ class WelcomeSlide extends StatelessWidget {
           ElevatedButton(
             onPressed: onNext,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0D1B4C),
+              backgroundColor: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 20),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
               elevation: 4,
-              shadowColor: const Color(0xFF0D1B4C).withOpacity(0.3),
+              shadowColor: (isDark ? const Color(0xFF60A5FA) : const Color(0xFF0D1B4C))
+                  .withOpacity(0.3),
             ),
             child: Text(
               'ابدأ الآن',
