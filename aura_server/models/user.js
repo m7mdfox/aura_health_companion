@@ -17,4 +17,8 @@ const profileSchema = new mongoose.Schema({
   created_at: { type: Date, default: Date.now },
 });
 
-export default mongoose.model("Profile", profileSchema);
+// FIX: We use 'profileSchema' here because that matches the variable name above.
+// We name the model "User" so that the Appointment 'ref: "User"' works correctly.
+const User = mongoose.models.User || mongoose.model("User", profileSchema);
+
+export default User;

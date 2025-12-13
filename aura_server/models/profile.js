@@ -14,6 +14,11 @@ const profileSchema = new mongoose.Schema({
   avatar_url: String,
   locale: { type: String, default: "en" },
   created_at: { type: Date, default: Date.now },
+}, { 
+  timestamps: true,
+  collection: "profiles" // <--- ADD THIS LINE (Forces connection to 'profiles')
 });
 
-export default mongoose.model("Profile", profileSchema);
+// Check if "Profile" is already defined. If yes, use it. If no, create it.
+const Profile = mongoose.models.Profile || mongoose.model("Profile", profileSchema);
+export default Profile;

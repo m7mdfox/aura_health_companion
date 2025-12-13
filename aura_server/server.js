@@ -10,6 +10,7 @@ import fs from "fs";
 
 // 1. IMPORT THE MESSAGE MODEL
 import Message from "./models/Message.js"; 
+import Profile from "./models/profile.js"; // <--- Add this
 
 // Import Routes
 import authRoutes from "./routes/authRoutes.js";
