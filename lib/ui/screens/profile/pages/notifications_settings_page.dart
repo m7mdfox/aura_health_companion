@@ -246,7 +246,7 @@ class _NotificationsSettingsPageState extends State<NotificationsSettingsPage> {
       trailing: Switch(
         value: value,
         onChanged: onChanged,
-        activeColor: const Color(0xFF00177E),
+        activeThumbColor: const Color(0xFF00177E),
       ),
     );
   }
@@ -292,7 +292,7 @@ class _NotificationsSettingsPageState extends State<NotificationsSettingsPage> {
                 Switch(
                   value: _quietHoursEnabled,
                   onChanged: (value) => setState(() => _quietHoursEnabled = value),
-                  activeColor: const Color(0xFF9C27B0),
+                  activeThumbColor: const Color(0xFF9C27B0),
                 ),
               ],
             ),

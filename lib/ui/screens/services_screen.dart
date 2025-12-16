@@ -1,10 +1,8 @@
 import 'package:aura_health_companion/ui/screens/doctor/doctor_request_screen.dart'; // 👈 تأكد من استيراد الملف هنا
 import 'package:aura_health_companion/ui/screens/services/medicine_screen.dart';
 import 'package:aura_health_companion/ui/screens/mental_health/mental_health_home_screen.dart';
-import 'package:aura_health_companion/ui/screens/nutrition/nutrition_onboarding.dart';
 import 'package:flutter/material.dart';
 import 'package:aura_health_companion/ui/screens/health_journey_game/game_screen.dart';
-import 'package:aura_health_companion/ui/screens/services/medicine_screen.dart';
 import 'package:aura_health_companion/ui/screens/fitness_coach/fitness_coach_main.dart';
 import 'package:aura_health_companion/ui/screens/nutrition/nutrition_main_entry.dart';
 

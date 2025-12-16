@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:aura_health_companion/data/auth_service.dart';
 import 'nutrition_onboarding.dart';
 import 'widgets/meal_suggestion_dialog.dart';

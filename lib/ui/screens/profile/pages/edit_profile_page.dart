@@ -434,7 +434,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return DropdownButtonFormField<String>(
-      value: value,
+      initialValue: value,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon, color: const Color(0xFF00177E)),

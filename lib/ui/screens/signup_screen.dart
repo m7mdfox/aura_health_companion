@@ -3,7 +3,6 @@ import 'package:aura_health_companion/logic/auth_controller.dart';
 import 'package:aura_health_companion/ui/screens/login_screen.dart';
 import 'package:aura_health_companion/ui/screens/otp_verification_screen.dart';
 import 'package:aura_health_companion/ui/widgets/error_animation.dart';
-import 'package:aura_health_companion/ui/widgets/success_animation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';

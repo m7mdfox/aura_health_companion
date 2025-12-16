@@ -232,7 +232,7 @@ class _ConnectedDevicesPageState extends State<ConnectedDevicesPage> {
                 Switch(
                   value: device.isConnected,
                   onChanged: (value) => _toggleConnection(device),
-                  activeColor: const Color(0xFF4CAF50),
+                  activeThumbColor: const Color(0xFF4CAF50),
                 ),
               ],
             ),

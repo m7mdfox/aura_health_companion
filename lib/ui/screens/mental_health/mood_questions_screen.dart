@@ -89,7 +89,9 @@ class _MoodQuestionsScreenState extends State<MoodQuestionsScreen> {
 
   @override
   void dispose() {
-    for (var c in _controllers) c.dispose();
+    for (var c in _controllers) {
+      c.dispose();
+    }
     super.dispose();
   }
 

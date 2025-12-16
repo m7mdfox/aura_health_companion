@@ -7,7 +7,7 @@ import 'dart:math' as math;
 // MAIN GAME SCREEN
 // ============================================
 class HealthJourneyGameScreen extends StatefulWidget {
-  const HealthJourneyGameScreen({Key? key}) : super(key: key);
+  const HealthJourneyGameScreen({super.key});
 
   @override
   State<HealthJourneyGameScreen> createState() => _HealthJourneyGameScreenState();
