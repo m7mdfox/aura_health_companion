@@ -21,6 +21,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     Widget currentScreen;
     switch (_currentStep) {
       case 0:
@@ -51,13 +53,15 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         ),
         centerTitle: true,
         flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            borderRadius: BorderRadius.only(
+          decoration: BoxDecoration(
+            borderRadius: const BorderRadius.only(
               bottomLeft: Radius.circular(30),
               bottomRight: Radius.circular(30),
             ),
             gradient: LinearGradient(
-              colors: [Color(0xFF00177E), Color(0xFF0F1120)],
+              colors: isDark
+                  ? [const Color(0xFF1A1D2E), const Color(0xFF0F1120)]
+                  : [const Color(0xFF00177E), const Color(0xFF0F1120)],
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
             ),
@@ -81,8 +85,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       bottomNavigationBar: _showBottomBar
           ? BottomNavigationBar(
               type: BottomNavigationBarType.fixed,
+              backgroundColor: isDark ? const Color(0xFF1A1D2E) : Colors.white,
               selectedItemColor: const Color(0xFF00177E),
-              unselectedItemColor: Colors.grey,
+              unselectedItemColor: isDark ? Colors.white54 : Colors.grey,
               currentIndex: 1,
               items: const [
                 BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),

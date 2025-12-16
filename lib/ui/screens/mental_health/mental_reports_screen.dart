@@ -13,92 +13,20 @@ class MentalReportsScreen extends StatefulWidget {
   State<MentalReportsScreen> createState() => _MentalReportsScreenState();
 }
 
-class _MentalReportsScreenState extends State<MentalReportsScreen>
-    with TickerProviderStateMixin {
-  static final TextStyle _poppins =
-      TextStyle(fontFamily: GoogleFonts.poppins().fontFamily);
-
-  // Animation Controllers
-  late AnimationController _staggerController;
-  late List<Animation<double>> _fadeAnimations;
-  late List<Animation<Offset>> _slideAnimations;
-  late List<AnimationController> _glowControllers;
-  late List<Animation<double>> _glowAnimations;
-
-  // Data from backend
+class _MentalReportsScreenState extends State<MentalReportsScreen> {
   Map<String, int> moodData = {};
   List<Map<String, dynamic>> weeklyTrend = [];
   double _allTimeAverage = 0.0;
   double _weeklyAverage = 0.0;
   int _totalEntries = 0;
-  int _currentStreak = 0;        // ✅ NEW: Current streak from backend
+  int _currentStreak = 0;
   bool _isLoading = true;
   String? _error;
-  bool _animationsReady = false;
 
   @override
   void initState() {
     super.initState();
-    _initAnimations();
     _fetchSummary();
-  }
-
-  void _initAnimations() {
-    _staggerController = AnimationController(
-      duration: const Duration(milliseconds: 1800),
-      vsync: this,
-    );
-
-    const int itemCount = 4;
-    final double staggerAmount = itemCount > 1 ? 0.8 / (itemCount - 1) : 0.0;
-
-    _fadeAnimations = [];
-    _slideAnimations = [];
-    _glowControllers = [];
-    _glowAnimations = [];
-
-    for (int i = 0; i < itemCount; i++) {
-      final double start = i * staggerAmount;
-
-      final fade = Tween<double>(begin: 0.0, end: 1.0).animate(
-        CurvedAnimation(
-          parent: _staggerController,
-          curve: Interval(start, 1.0, curve: Curves.easeOutCubic),
-        ),
-      );
-      final slide = Tween<Offset>(begin: const Offset(0, 0.7), end: Offset.zero)
-          .animate(
-        CurvedAnimation(
-          parent: _staggerController,
-          curve: Interval(start, 1.0, curve: Curves.easeOutCubic),
-        ),
-      );
-      _fadeAnimations.add(fade);
-      _slideAnimations.add(slide);
-
-      final glowCtrl = AnimationController(
-        duration: const Duration(milliseconds: 800),
-        vsync: this,
-      );
-      final glow = Tween<double>(begin: 0.0, end: 1.0).animate(
-        CurvedAnimation(parent: glowCtrl, curve: Curves.easeOut),
-      );
-      _glowControllers.add(glowCtrl);
-      _glowAnimations.add(glow);
-    }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        setState(() => _animationsReady = true);
-        _staggerController.forward();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _staggerController.dispose();
-    for (var c in _glowControllers) c.dispose();
-    super.dispose();
   }
 
   Future<void> _fetchSummary() async {
@@ -119,28 +47,21 @@ class _MentalReportsScreenState extends State<MentalReportsScreen>
     }
 
     final uri = Uri.parse('http://10.0.2.2:4000/api/moods/summary/$userId');
-    print('Fetching summary from: $uri');
 
     try {
       final resp = await http.get(uri).timeout(const Duration(seconds: 15));
-
-      print('STATUS CODE: ${resp.statusCode}');
-      print('RESPONSE BODY: ${resp.body}');
 
       if (!mounted) return;
 
       if (resp.statusCode == 200) {
         final json = jsonDecode(resp.body);
-        print('PARSED JSON: $json');
 
-        // Mood distribution
         final dist = <String, int>{};
         (json['distribution'] as Map<String, dynamic>?)?.forEach((key, value) {
           final normalized = _normalizeMood(key);
           dist[normalized] = value as int;
         });
 
-        // Weekly trend
         final week = (json['weekly'] as List? ?? [])
             .map((e) => {
                   'day': e['day']?.toString() ?? 'Unknown',
@@ -148,11 +69,10 @@ class _MentalReportsScreenState extends State<MentalReportsScreen>
                 })
             .toList();
 
-        // Averages and stats
         final allTimeAvg = (json['allTimeAverage'] as num?)?.toDouble() ?? 0.0;
         final weeklyAvg = (json['weeklyAverage'] as num?)?.toDouble() ?? 0.0;
         final total = json['total'] as int? ?? 0;
-        final streak = json['currentStreak'] as int? ?? 0;  // ✅ GET STREAK FROM BACKEND
+        final streak = json['currentStreak'] as int? ?? 0;
 
         setState(() {
           moodData = dist;
@@ -160,19 +80,16 @@ class _MentalReportsScreenState extends State<MentalReportsScreen>
           _allTimeAverage = allTimeAvg;
           _weeklyAverage = weeklyAvg;
           _totalEntries = total;
-          _currentStreak = streak;     // ✅ UPDATE STREAK
+          _currentStreak = streak;
           _isLoading = false;
         });
-
-        print('✅ Loaded: Total=$total, Streak=$_currentStreak, Avg=$_allTimeAverage');
       } else {
         setState(() {
           _isLoading = false;
-          _error = "Server Error: ${resp.statusCode}\n${resp.body}";
+          _error = "Server Error: ${resp.statusCode}";
         });
       }
     } catch (e) {
-      print('EXCEPTION: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -203,7 +120,6 @@ class _MentalReportsScreenState extends State<MentalReportsScreen>
                                     : key;
   }
 
-  // ✅ NEW: Format streak display
   String _formatStreak(int streak) {
     if (streak == 0) return '0 days';
     if (streak == 1) return '1 day';
@@ -212,31 +128,45 @@ class _MentalReportsScreenState extends State<MentalReportsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     if (_isLoading) {
-      return const Scaffold(
-        backgroundColor: Color(0xFFF8FAFC),
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        backgroundColor: isDark ? const Color(0xFF0F1120) : const Color(0xFFF5F7FA),
+        body: Center(
+          child: CircularProgressIndicator(
+            color: isDark ? Colors.white : const Color(0xFF00177E),
+          ),
+        ),
       );
     }
 
     if (_error != null) {
       return Scaffold(
-        backgroundColor: const Color(0xFFF8FAFC),
-        appBar: _buildLightAppBar(),
+        backgroundColor: isDark ? const Color(0xFF0F1120) : const Color(0xFFF5F7FA),
+        appBar: _buildAppBar(isDark),
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error, size: 64, color: Colors.red),
+              Icon(
+                Ionicons.alert_circle,
+                size: 64,
+                color: isDark ? Colors.white38 : Colors.grey,
+              ),
               const SizedBox(height: 16),
               Text(
                 _error!,
-                style: _poppins.copyWith(fontSize: 16),
+                style: GoogleFonts.poppins(fontSize: 16),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
               ElevatedButton(
                 onPressed: _fetchSummary,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF00177E),
+                  foregroundColor: Colors.white,
+                ),
                 child: const Text("Retry"),
               ),
             ],
@@ -246,36 +176,20 @@ class _MentalReportsScreenState extends State<MentalReportsScreen>
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: _buildLightAppBar(),
+      backgroundColor: isDark ? const Color(0xFF0F1120) : const Color(0xFFF5F7FA),
+      appBar: _buildAppBar(isDark),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
           child: Column(
             children: [
-              if (_animationsReady) ...[
-                _buildAnimatedSection(
-                  index: 0,
-                  child: _buildPremiumHeader(_allTimeAverage, _weeklyAverage, _totalEntries),
-                ),
-                const SizedBox(height: 28),
-                _buildAnimatedSection(
-                  index: 1,
-                  child: _buildPieChartCard(_totalEntries),
-                ),
-                const SizedBox(height: 28),
-                _buildAnimatedSection(
-                  index: 2,
-                  child: _buildLineChartCard(),
-                ),
-                const SizedBox(height: 28),
-                _buildAnimatedSection(
-                  index: 3,
-                  child: _buildStatsRow(_totalEntries),
-                ),
-              ] else ...[
-                const Center(child: CircularProgressIndicator()),
-              ],
+              _buildHeader(_allTimeAverage, _weeklyAverage, _totalEntries, isDark),
+              const SizedBox(height: 20),
+              _buildPieChartCard(_totalEntries, isDark),
+              const SizedBox(height: 20),
+              _buildLineChartCard(isDark),
+              const SizedBox(height: 20),
+              _buildStatsRow(_totalEntries, isDark),
               const SizedBox(height: 20),
             ],
           ),
@@ -284,143 +198,75 @@ class _MentalReportsScreenState extends State<MentalReportsScreen>
     );
   }
 
-  // ... (keep all other methods unchanged: _buildAnimatedSection, _buildLightAppBar, _backButton, _buildPremiumHeader, _buildPieChartCard, _buildLineChartCard)
-
-  Widget _buildStatsRow(int total) {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatCard(
-            'Total Entries',
-            total == 0 ? '0' : '$total',
-            Ionicons.pulse,
-            const Color(0xFFF59E0B),
-            _glowControllers[3],
-            _glowAnimations[3],
-          ),
+  PreferredSizeWidget _buildAppBar(bool isDark) {
+    return AppBar(
+      backgroundColor: isDark ? const Color(0xFF1A1D2E) : Colors.white,
+      elevation: 0,
+      leading: IconButton(
+        icon: Icon(
+          Ionicons.arrow_back,
+          color: isDark ? Colors.white : const Color(0xFF475569),
         ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _buildStatCard(
-            'Current Streak',                           // ✅ Fixed label
-            _formatStreak(_currentStreak),              // ✅ Real streak from backend
-            Ionicons.flame,
-            const Color(0xFFEF4444),
-            _glowControllers[3],
-            _glowAnimations[3],
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ... (keep _buildStatCard, _buildGlassCard, PieChartPainter, LineChartPainter unchanged)
-  
-  Widget _buildAnimatedSection({required int index, required Widget child}) {
-    return AnimatedBuilder(
-      animation: Listenable.merge([_staggerController, _glowControllers[index]]),
-      builder: (context, _) {
-        return SlideTransition(
-          position: _slideAnimations[index],
-          child: FadeTransition(
-            opacity: _fadeAnimations[index],
-            child: Transform.scale(
-              scale: 0.94 + (0.06 * _fadeAnimations[index].value),
-              child: Opacity(opacity: _fadeAnimations[index].value, child: child),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  PreferredSizeWidget _buildLightAppBar() {
-    return PreferredSize(
-      preferredSize: const Size.fromHeight(70),
-      child: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-        shadowColor: Colors.black.withOpacity(0.06),
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
-        ),
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 12),
-          child: _backButton(),
-        ),
-        title: Text(
-          'Reports',
-          style: _poppins.copyWith(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: const Color(0xFF1E293B),
-          ),
-        ),
-        centerTitle: true,
+        onPressed: () => Navigator.pop(context),
       ),
-    );
-  }
-
-  Widget _backButton() {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(30),
-        onTap: () => Navigator.pop(context),
-        child: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF1F5F9),
-            shape: BoxShape.circle,
-            border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.06),
-                blurRadius: 8,
-                offset: const Offset(1, 2),
-              ),
-            ],
-          ),
-          child: const Icon(Ionicons.arrow_back, color: Color(0xFF475569), size: 22),
+      title: Text(
+        'Reports',
+        style: GoogleFonts.poppins(
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+          color: isDark ? Colors.white : const Color(0xFF1E293B),
         ),
       ),
+      centerTitle: true,
     );
   }
 
-  Widget _buildPremiumHeader(double allTimeAvg, double weeklyAvg, int total) {
+  Widget _buildHeader(double allTimeAvg, double weeklyAvg, int total, bool isDark) {
     String moodText, emoji;
     if (total == 0) {
       moodText = "No Data Yet";
-      emoji = "Neutral";
+      emoji = "😐";
     } else if (allTimeAvg >= 4.5) {
       moodText = "Excellent";
-      emoji = "Very Happy";
+      emoji = "😄";
     } else if (allTimeAvg >= 3.5) {
       moodText = "Good";
-      emoji = "Smile";
+      emoji = "😊";
     } else if (allTimeAvg >= 2.5) {
       moodText = "Okay";
-      emoji = "Neutral";
+      emoji = "😐";
     } else {
       moodText = "Needs Improvement";
-      emoji = "Frowning";
+      emoji = "😔";
     }
 
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)]),
-        borderRadius: BorderRadius.circular(26),
+        gradient: LinearGradient(
+          colors: isDark
+              ? [const Color(0xFF1A1D2E), const Color(0xFF2D1B69)]
+              : [const Color(0xFF00177E), const Color(0xFF1B1E36)],
+        ),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 20, offset: const Offset(0, 8)),
+          BoxShadow(
+            color: (isDark ? const Color(0xFF2D1B69) : const Color(0xFF00177E))
+                .withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
         ],
       ),
       child: Column(
         children: [
           Text(
             'Your Weekly Summary',
-            style: _poppins.copyWith(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+            style: GoogleFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
           ),
           const SizedBox(height: 16),
           Row(
@@ -431,9 +277,11 @@ class _MentalReportsScreenState extends State<MentalReportsScreen>
               Flexible(
                 child: Text(
                   moodText,
-                  style: _poppins.copyWith(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ],
@@ -443,39 +291,49 @@ class _MentalReportsScreenState extends State<MentalReportsScreen>
             total == 0
                 ? 'Start logging your mood!'
                 : 'Average Mood: ${allTimeAvg.toStringAsFixed(1)} / 5.0',
-            style: _poppins.copyWith(fontSize: 16, color: Colors.white70),
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              color: Colors.white.withOpacity(0.9),
+            ),
           ),
           const SizedBox(height: 4),
           Text(
             'This Week: ${weeklyAvg.toStringAsFixed(1)}',
-            style: _poppins.copyWith(fontSize: 14, color: Colors.white60),
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              color: Colors.white.withOpacity(0.8),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildPieChartCard(int total) {
+  Widget _buildPieChartCard(int total, bool isDark) {
     if (total == 0) {
-      return _buildGlassCard(
+      return _buildCard(
         title: 'Mood Distribution',
-        color: const Color(0xFF8B5CF6),
-        glowController: _glowControllers[1],
-        glowAnimation: _glowAnimations[1],
-        child: const Center(
-          child: Text(
-            'No mood entries yet',
-            style: TextStyle(fontSize: 16, color: Color(0xFF64748B)),
+        icon: Ionicons.pie_chart,
+        isDark: isDark,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(40),
+            child: Text(
+              'No mood entries yet',
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                color: isDark ? Colors.white60 : const Color(0xFF64748B),
+              ),
+            ),
           ),
         ),
       );
     }
 
-    return _buildGlassCard(
+    return _buildCard(
       title: 'Mood Distribution',
-      color: const Color(0xFF8B5CF6),
-      glowController: _glowControllers[1],
-      glowAnimation: _glowAnimations[1],
+      icon: Ionicons.pie_chart,
+      isDark: isDark,
       child: SizedBox(
         height: 220,
         width: double.infinity,
@@ -491,17 +349,17 @@ class _MentalReportsScreenState extends State<MentalReportsScreen>
                 children: [
                   Text(
                     '$total',
-                    style: _poppins.copyWith(
-                      fontSize: 36,
+                    style: GoogleFonts.poppins(
+                      fontSize: 32,
                       fontWeight: FontWeight.bold,
-                      color: const Color(0xFF1E293B),
+                      color: isDark ? Colors.white : const Color(0xFF1E293B),
                     ),
                   ),
                   Text(
                     'Total Entries',
-                    style: _poppins.copyWith(
-                      fontSize: 14,
-                      color: const Color(0xFF64748B),
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      color: isDark ? Colors.white60 : const Color(0xFF64748B),
                     ),
                   ),
                 ],
@@ -513,20 +371,22 @@ class _MentalReportsScreenState extends State<MentalReportsScreen>
     );
   }
 
-  Widget _buildLineChartCard() {
-    return _buildGlassCard(
+  Widget _buildLineChartCard(bool isDark) {
+    return _buildCard(
       title: 'Weekly Trend',
-      color: const Color(0xFF10B981),
-      glowController: _glowControllers[2],
-      glowAnimation: _glowAnimations[2],
+      icon: Ionicons.trending_up,
+      isDark: isDark,
       child: SizedBox(
         height: 180,
         width: double.infinity,
         child: weeklyTrend.isEmpty
-            ? const Center(
+            ? Center(
                 child: Text(
                   'No data for this week',
-                  style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                  ),
                 ),
               )
             : CustomPaint(
@@ -537,105 +397,139 @@ class _MentalReportsScreenState extends State<MentalReportsScreen>
     );
   }
 
+  Widget _buildStatsRow(int total, bool isDark) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildStatCard(
+            'Total Entries',
+            total == 0 ? '0' : '$total',
+            Ionicons.pulse,
+            const Color(0xFFF59E0B),
+            isDark,
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: _buildStatCard(
+            'Current Streak',
+            _formatStreak(_currentStreak),
+            Ionicons.flame,
+            const Color(0xFFEF4444),
+            isDark,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildStatCard(
     String label,
     String value,
     IconData icon,
     Color color,
-    AnimationController glowController,
-    Animation<double> glowAnimation,
+    bool isDark,
   ) {
-    return AnimatedBuilder(
-      animation: glowAnimation,
-      builder: (context, child) {
-        return Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.9 - glowAnimation.value * 0.1),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: Colors.white.withOpacity(0.6), width: 1.2),
-            boxShadow: [
-              BoxShadow(
-                color: color.withOpacity(0.25 + glowAnimation.value * 0.3),
-                blurRadius: 12 + glowAnimation.value * 12,
-                spreadRadius: glowAnimation.value * 4,
-                offset: const Offset(0, 3),
-              ),
-              BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: const Offset(0, 5)),
-            ],
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1A1D2E) : Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.black.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: [color, color.withOpacity(0.8)]),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, color: Colors.white, size: 28),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [color, color.withOpacity(0.8)],
               ),
-              const SizedBox(height: 12),
-              Text(value, style: _poppins.copyWith(fontSize: 22, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
-              Text(label, style: _poppins.copyWith(fontSize: 13, color: const Color(0xFF64748B)), textAlign: TextAlign.center),
-            ],
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: Colors.white, size: 24),
           ),
-        );
-      },
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : const Color(0xFF1E293B),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              color: isDark ? Colors.white60 : const Color(0xFF64748B),
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildGlassCard({
+  Widget _buildCard({
     required String title,
+    required IconData icon,
     required Widget child,
-    required Color color,
-    required AnimationController glowController,
-    required Animation<double> glowAnimation,
+    required bool isDark,
   }) {
-    return AnimatedBuilder(
-      animation: glowAnimation,
-      builder: (context, _) {
-        return Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(26),
-            gradient: LinearGradient(
-              colors: [
-                Colors.white.withOpacity(0.9 - glowAnimation.value * 0.2),
-                Colors.white.withOpacity(0.7 - glowAnimation.value * 0.15),
-              ],
-            ),
-            border: Border.all(color: Colors.white.withOpacity(0.6), width: 1.5),
-            boxShadow: [
-              BoxShadow(
-                color: color.withOpacity(0.25 + glowAnimation.value * 0.35),
-                blurRadius: 16 + glowAnimation.value * 16,
-                spreadRadius: glowAnimation.value * 6,
-                offset: const Offset(0, 4),
-              ),
-              BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, 8)),
-            ],
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1A1D2E) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.black.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  Text(title, style: _poppins.copyWith(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
-                  const Spacer(),
-                  Icon(Icons.show_chart, color: color, size: 22),
-                ],
+              Icon(
+                icon,
+                color: isDark ? Colors.white : const Color(0xFF1E293B),
+                size: 22,
               ),
-              const SizedBox(height: 16),
-              child,
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: GoogleFonts.poppins(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : const Color(0xFF1E293B),
+                ),
+              ),
             ],
           ),
-        );
-      },
+          const SizedBox(height: 16),
+          child,
+        ],
+      ),
     );
   }
 }
 
-// PieChartPainter and LineChartPainter remain unchanged...
 class PieChartPainter extends CustomPainter {
   final Map<String, int> data;
   final int total;
@@ -694,7 +588,7 @@ class LineChartPainter extends CustomPainter {
 
     final paint = Paint()
       ..color = const Color(0xFF10B981)
-      ..strokeWidth = 4
+      ..strokeWidth = 3
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
@@ -710,13 +604,10 @@ class LineChartPainter extends CustomPainter {
     for (int i = 0; i < data.length; i++) {
       final x = i * dx;
       final mood = data[i]['mood'] as num;
-      final y = mood > 0
-          ? 20 + (size.height - 40) - mood * dy
-          : size.height - 20;
+      final y = mood > 0 ? 20 + (size.height - 40) - mood * dy : size.height - 20;
       points.add(Offset(x, y));
     }
 
-    // Fill area
     final path = Path()
       ..moveTo(0, size.height)
       ..lineTo(points.first.dx, points.first.dy);
@@ -727,17 +618,15 @@ class LineChartPainter extends CustomPainter {
     path.close();
     canvas.drawPath(path, fillPaint);
 
-    // Line
     final linePath = Path()..moveTo(points.first.dx, points.first.dy);
     for (int i = 1; i < points.length; i++) {
       linePath.lineTo(points[i].dx, points[i].dy);
     }
     canvas.drawPath(linePath, paint);
 
-    // Dots
     for (final p in points) {
-      canvas.drawCircle(p, 7, Paint()..color = const Color(0xFF10B981));
-      canvas.drawCircle(p, 4, Paint()..color = Colors.white);
+      canvas.drawCircle(p, 6, Paint()..color = const Color(0xFF10B981));
+      canvas.drawCircle(p, 3, Paint()..color = Colors.white);
     }
   }
 

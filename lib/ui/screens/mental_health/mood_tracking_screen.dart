@@ -15,91 +15,19 @@ class MoodTrackingScreen extends StatefulWidget {
   State<MoodTrackingScreen> createState() => _MoodTrackingScreenState();
 }
 
-class _MoodTrackingScreenState extends State<MoodTrackingScreen>
-    with TickerProviderStateMixin {
-  // ────── Font shortcut ──────
+class _MoodTrackingScreenState extends State<MoodTrackingScreen> {
   static final TextStyle _poppins =
       TextStyle(fontFamily: GoogleFonts.poppins().fontFamily);
 
-  // ────── Animation Controllers ──────
-  late AnimationController _staggerController;
-  late List<Animation<double>> _fadeAnimations;
-  late List<Animation<Offset>> _slideAnimations;
-  late List<AnimationController> _glowControllers;
-  late List<Animation<double>> _glowAnimations;
-
-  // ────── UI State ──────
   bool _isLoading = false;
   String? _todayMood;
-  bool _animationsInitialized = false;
 
   @override
   void initState() {
     super.initState();
     _loadTodayMood();
-    _initAnimations();
   }
 
-  void _initAnimations() {
-    _staggerController = AnimationController(
-      duration: const Duration(milliseconds: 1800),
-      vsync: this,
-    );
-
-    final int moodCount = moods.length;
-    final double staggerAmount = moodCount > 1 ? 0.8 / (moodCount - 1) : 0.0;
-
-    _fadeAnimations = [];
-    _slideAnimations = [];
-    _glowControllers = [];
-    _glowAnimations = [];
-
-    for (int i = 0; i < moodCount; i++) {
-      final double start = i * staggerAmount;
-
-      final fade = Tween<double>(begin: 0.0, end: 1.0).animate(
-        CurvedAnimation(
-          parent: _staggerController,
-          curve: Interval(start, 1.0, curve: Curves.easeOutCubic),
-        ),
-      );
-      final slide = Tween<Offset>(begin: const Offset(0, 0.8), end: Offset.zero)
-          .animate(
-        CurvedAnimation(
-          parent: _staggerController,
-          curve: Interval(start, 1.0, curve: Curves.easeOutCubic),
-        ),
-      );
-      _fadeAnimations.add(fade);
-      _slideAnimations.add(slide);
-
-      final glowCtrl = AnimationController(
-        duration: const Duration(milliseconds: 800),
-        vsync: this,
-      );
-      final glow = Tween<double>(begin: 0.0, end: 1.0).animate(
-        CurvedAnimation(parent: glowCtrl, curve: Curves.easeOut),
-      );
-      _glowControllers.add(glowCtrl);
-      _glowAnimations.add(glow);
-    }
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        setState(() => _animationsInitialized = true);
-        _staggerController.forward();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _staggerController.dispose();
-    for (var c in _glowControllers) c.dispose();
-    super.dispose();
-  }
-
-  // Load saved mood for today (with user check)
   Future<void> _loadTodayMood() async {
     final prefs = await SharedPreferences.getInstance();
     final today = _formatDateOnly(DateTime.now());
@@ -110,7 +38,6 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen>
     final currentUserId = AuthService.profile?['auth_id'] ??
         AuthService.profile?['user_id'];
 
-    // If user changed or date changed → clear old data
     if (savedDate != today || savedUserId != currentUserId) {
       await prefs.remove('last_mood_date');
       await prefs.remove('today_mood');
@@ -126,53 +53,52 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen>
     }
   }
 
-  // Mood data
   final List<Map<String, dynamic>> moods = [
     {
       "label": "Happy",
-      "emoji": "Smile",
+      "emoji": "😊",
       "color": const Color(0xFFFBBF24),
       "icon": Ionicons.happy,
     },
     {
       "label": "Relaxed",
-      "emoji": "Relaxed",
+      "emoji": "😌",
       "color": const Color(0xFF10B981),
       "icon": Ionicons.flower,
     },
     {
       "label": "Anxious",
-      "emoji": "Anxious",
+      "emoji": "😰",
       "color": const Color(0xFF3B82F6),
       "icon": Ionicons.cloud,
     },
     {
       "label": "Sad",
-      "emoji": "Sad",
+      "emoji": "😢",
       "color": const Color(0xFF6B7280),
       "icon": Ionicons.sad,
     },
     {
       "label": "Neutral",
-      "emoji": "Neutral",
+      "emoji": "😐",
       "color": const Color(0xFF9E9E9E),
       "icon": Ionicons.help_circle,
     },
     {
       "label": "Angry",
-      "emoji": "Angry",
+      "emoji": "😠",
       "color": const Color(0xFFE57373),
       "icon": Ionicons.flash,
     },
     {
       "label": "Tired",
-      "emoji": "Tired",
+      "emoji": "😴",
       "color": const Color(0xFF64B5F6),
       "icon": Ionicons.bed,
     },
     {
       "label": "Stressed",
-      "emoji": "Stressed",
+      "emoji": "😫",
       "color": const Color(0xFFFFD54F),
       "icon": Ionicons.alert_circle,
     },
@@ -181,10 +107,11 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen>
   @override
   Widget build(BuildContext context) {
     final today = _formatDate(DateTime.now());
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: _buildPremiumAppBar(),
+      backgroundColor: isDark ? const Color(0xFF0F1120) : const Color(0xFFF5F7FA),
+      appBar: _buildAppBar(isDark),
       body: SafeArea(
         child: Stack(
           children: [
@@ -200,7 +127,7 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen>
                         style: _poppins.copyWith(
                           fontSize: 26,
                           fontWeight: FontWeight.bold,
-                          color: const Color(0xFF1E293B),
+                          color: isDark ? Colors.white : const Color(0xFF1E293B),
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -209,7 +136,7 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen>
                         today,
                         style: _poppins.copyWith(
                           fontSize: 15,
-                          color: const Color(0xFF64748B),
+                          color: isDark ? Colors.white60 : const Color(0xFF64748B),
                           fontStyle: FontStyle.italic,
                         ),
                         textAlign: TextAlign.center,
@@ -237,7 +164,6 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen>
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              // Edit Mood Button
                               GestureDetector(
                                 onTap: () {
                                   ScaffoldMessenger.of(context).showSnackBar(
@@ -288,37 +214,32 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen>
                 ),
                 const SizedBox(height: 28),
                 Expanded(
-                  child: _animationsInitialized
-                      ? GridView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 18),
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 16,
-                            mainAxisSpacing: 16,
+                  child: GridView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                      childAspectRatio: 1.0,
+                    ),
+                    itemCount: moods.length,
+                    itemBuilder: (context, index) {
+                      final mood = moods[index];
+                      final isSelected = _todayMood == mood['label'];
+                      return Opacity(
+                        opacity: _isLoading ? 0.6 : 1.0,
+                        child: AbsorbPointer(
+                          absorbing: _isLoading,
+                          child: _buildMoodCard(
+                            mood: mood,
+                            isSelected: isSelected,
+                            isDark: isDark,
                           ),
-                          itemCount: moods.length,
-                          itemBuilder: (context, index) {
-                            final mood = moods[index];
-                            final isSelected = _todayMood == mood['label'];
-                            return Opacity(
-                              opacity: _isLoading ? 0.6 : 1.0,
-                              child: AbsorbPointer(
-                                absorbing: _isLoading,
-                                child: _buildPremiumMoodCard(
-                                  index: index,
-                                  mood: mood,
-                                  fadeAnimation: _fadeAnimations[index],
-                                  slideAnimation: _slideAnimations[index],
-                                  glowAnimation: _glowAnimations[index],
-                                  glowController: _glowControllers[index],
-                                  isSelected: isSelected,
-                                ),
-                              ),
-                            );
-                          },
-                        )
-                      : const Center(child: CircularProgressIndicator()),
+                        ),
+                      );
+                    },
+                  ),
                 ),
                 const SizedBox(height: 16),
               ],
@@ -330,7 +251,7 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen>
                   child: Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: isDark ? const Color(0xFF1A1D2E) : Colors.white,
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
@@ -352,7 +273,7 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen>
                           style: _poppins.copyWith(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: const Color(0xFF1E293B),
+                            color: isDark ? Colors.white : const Color(0xFF1E293B),
                           ),
                         ),
                       ],
@@ -366,35 +287,28 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen>
     );
   }
 
-  PreferredSizeWidget _buildPremiumAppBar() {
-    return PreferredSize(
-      preferredSize: const Size.fromHeight(70),
-      child: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-        shadowColor: Colors.black.withOpacity(0.08),
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
-        ),
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 12),
-          child: _backButton(),
-        ),
-        title: Text(
-          'Mood Tracking',
-          style: _poppins.copyWith(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: const Color(0xFF1E293B),
-          ),
-        ),
-        centerTitle: true,
+  PreferredSizeWidget _buildAppBar(bool isDark) {
+    return AppBar(
+      backgroundColor: isDark ? const Color(0xFF1A1D2E) : Colors.white,
+      elevation: 0,
+      surfaceTintColor: Colors.transparent,
+      leading: Padding(
+        padding: const EdgeInsets.only(left: 12),
+        child: _backButton(isDark),
       ),
+      title: Text(
+        'Mood Tracking',
+        style: _poppins.copyWith(
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+          color: isDark ? Colors.white : const Color(0xFF1E293B),
+        ),
+      ),
+      centerTitle: true,
     );
   }
 
-  Widget _backButton() {
+  Widget _backButton(bool isDark) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -403,126 +317,83 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen>
         child: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.7),
+            color: isDark 
+              ? const Color(0xFF0F1120).withOpacity(0.7)
+              : Colors.white.withOpacity(0.7),
             shape: BoxShape.circle,
-            border:
-                Border.all(color: Colors.white.withOpacity(0.5), width: 1.5),
+            border: Border.all(
+              color: isDark 
+                ? Colors.white.withOpacity(0.1)
+                : Colors.white.withOpacity(0.5), 
+              width: 1.5
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
                 blurRadius: 12,
                 offset: const Offset(1, 3),
               ),
             ],
           ),
-          child: const Icon(Ionicons.arrow_back,
-              color: Color(0xFF475569), size: 22),
+          child: Icon(
+            Ionicons.arrow_back,
+            color: isDark ? Colors.white70 : const Color(0xFF475569), 
+            size: 22
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildPremiumMoodCard({
-    required int index,
+  Widget _buildMoodCard({
     required Map<String, dynamic> mood,
-    required Animation<double> fadeAnimation,
-    required Animation<Offset> slideAnimation,
-    required Animation<double> glowAnimation,
-    required AnimationController glowController,
     required bool isSelected,
+    required bool isDark,
   }) {
     final Color baseColor = mood['color'] as Color;
 
-    return AnimatedBuilder(
-      animation: Listenable.merge([_staggerController, glowController]),
-      builder: (context, child) {
-        return SlideTransition(
-          position: slideAnimation,
-          child: FadeTransition(
-            opacity: fadeAnimation,
-            child: Transform.scale(
-              scale: 0.94 + (0.06 * fadeAnimation.value),
-              child: Opacity(
-                opacity: fadeAnimation.value,
-                child: _buildGlassCard(
-                  mood: mood,
-                  baseColor: baseColor,
-                  glowValue: glowAnimation.value,
-                  isSelected: isSelected,
-                  onTap: () async {
-                    // Allow editing even if mood is already logged
-                    await _logMood(
-                      mood['label'] as String,
-                      mood['emoji'] as String,
-                      baseColor,
-                      isEdit: _todayMood != null,
-                    );
-                    glowController.forward().then((_) => glowController.reset());
-                  },
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildGlassCard({
-    required Map<String, dynamic> mood,
-    required Color baseColor,
-    required double glowValue,
-    required bool isSelected,
-    required VoidCallback? onTap,
-  }) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(22),
-        onTap: onTap,
-        splashColor: baseColor.withOpacity(0.3),
-        highlightColor: Colors.transparent,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 600),
-          curve: Curves.easeOutCubic,
+        borderRadius: BorderRadius.circular(20),
+        onTap: () async {
+          await _logMood(
+            mood['label'] as String,
+            mood['emoji'] as String,
+            baseColor,
+            isEdit: _todayMood != null,
+          );
+        },
+        child: Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
-            gradient: LinearGradient(
-              colors: [
-                Colors.white.withOpacity(0.9 - glowValue * 0.2),
-                Colors.white.withOpacity(0.7 - glowValue * 0.15),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            color: isDark ? const Color(0xFF1A1D2E) : Colors.white,
+            borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: isSelected
                   ? baseColor.withOpacity(0.9)
-                  : Colors.white.withOpacity(0.6),
+                  : (isDark 
+                    ? Colors.white.withOpacity(0.1)
+                    : baseColor.withOpacity(0.2)),
               width: isSelected ? 2.5 : 1.2,
             ),
             boxShadow: [
               BoxShadow(
-                color: baseColor.withOpacity(0.25 + glowValue * 0.35),
-                blurRadius: 16 + glowValue * 16,
-                spreadRadius: glowValue * 6,
-                offset: const Offset(0, 3),
-              ),
-              BoxShadow(
-                color: Colors.black.withOpacity(0.08),
-                blurRadius: 12,
-                offset: const Offset(0, 6),
+                color: isDark 
+                  ? Colors.black.withOpacity(0.3)
+                  : Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 5),
               ),
             ],
           ),
           child: Padding(
             padding: const EdgeInsets.all(12),
             child: Column(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  width: 40,
-                  height: 40,
+                  width: 50,
+                  height: 50,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                         colors: [baseColor, baseColor.withOpacity(0.8)]),
@@ -538,34 +409,34 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen>
                   child: Center(
                     child: Text(
                       mood['emoji'] as String,
-                      style: const TextStyle(fontSize: 22),
+                      style: const TextStyle(fontSize: 26),
                     ),
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 Text(
                   mood['label'] as String,
                   style: _poppins.copyWith(
-                    fontSize: 14,
+                    fontSize: 15,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF1E293B),
+                    color: isDark ? Colors.white : const Color(0xFF1E293B),
                   ),
                   textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Icon(
                   mood['icon'] as IconData,
                   color: baseColor,
                   size: 20,
                 ),
                 if (isSelected) ...[
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Icon(
                     Ionicons.checkmark_circle,
                     color: Colors.green.shade600,
-                    size: 18,
+                    size: 20,
                   ),
                 ],
               ],
@@ -576,7 +447,6 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen>
     );
   }
 
-  // Log or update mood – allows editing on the same day
   Future<void> _logMood(
     String label,
     String emoji,
@@ -650,26 +520,15 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen>
           ),
         );
 
-        // ────── NAVIGATE TO LANGUAGE SELECTION SCREEN ──────
         Future.delayed(const Duration(milliseconds: 800), () {
           if (mounted) {
             Navigator.push(
               context,
-              PageRouteBuilder(
-                transitionDuration: const Duration(milliseconds: 600),
-                pageBuilder: (context, animation, secondaryAnimation) {
-                  return LanguageSelectionScreen(
-                    moodLabel: label,
-                    moodColor: color,
-                  );
-                },
-                transitionsBuilder:
-                    (context, animation, secondaryAnimation, child) {
-                  final fadeTween = Tween<double>(begin: 0.0, end: 1.0).animate(
-                    CurvedAnimation(parent: animation, curve: Curves.easeOut),
-                  );
-                  return FadeTransition(opacity: fadeTween, child: child);
-                },
+              MaterialPageRoute(
+                builder: (context) => LanguageSelectionScreen(
+                  moodLabel: label,
+                  moodColor: color,
+                ),
               ),
             );
           }

@@ -22,7 +22,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  // دالة تمسح بيانات المود المحلية (للحساب القديم)
   Future<void> _clearLocalMoodData() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('last_mood_date');
@@ -54,8 +53,10 @@ class _LoginScreenState extends State<LoginScreen> {
     final authController = Provider.of<AuthController>(context);
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF0F1120) : Colors.white,
       body: Stack(
         children: [
           // Background Pattern
@@ -63,12 +64,14 @@ class _LoginScreenState extends State<LoginScreen> {
             top: 0,
             right: 0,
             child: Opacity(
-              opacity: 0.3,
+              opacity: isDark ? 0.2 : 0.3,
               child: Image.asset(
                 'assets/PatternLogin.png',
                 width: screenWidth,
                 height: screenHeight * 0.5,
                 fit: BoxFit.cover,
+                color: isDark ? const Color(0xFF1A1D2E) : null,
+                colorBlendMode: isDark ? BlendMode.modulate : null,
               ),
             ),
           ),
@@ -91,7 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                         fontFamily: GoogleFonts.inter().fontFamily,
-                        color: const Color(0xFF00177E),
+                        color: isDark ? Colors.white : const Color(0xFF00177E),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -100,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey[600],
+                        color: isDark ? Colors.white60 : Colors.grey[600],
                         fontFamily: GoogleFonts.inter().fontFamily,
                       ),
                     ),
@@ -111,15 +114,18 @@ class _LoginScreenState extends State<LoginScreen> {
                       width: 327,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF5F6F9),
+                        color: isDark ? const Color(0xFF1A1D2E) : const Color(0xFFF5F6F9),
                         borderRadius: BorderRadius.circular(7),
                         border: Border.all(
-                            color: const Color.fromARGB(255, 218, 218, 218),
-                            width: 1),
-                        boxShadow: const [
+                          color: isDark 
+                            ? Colors.white12 
+                            : const Color.fromARGB(255, 218, 218, 218),
+                          width: 1,
+                        ),
+                        boxShadow: [
                           BoxShadow(
-                            color: Color(0x05000000),
-                            offset: Offset(0, 3),
+                            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+                            offset: const Offset(0, 3),
                             blurRadius: 6,
                             spreadRadius: 0,
                           ),
@@ -132,14 +138,16 @@ class _LoginScreenState extends State<LoginScreen> {
                           Expanded(
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF0F1120),
+                                backgroundColor: isDark 
+                                  ? const Color(0xFF00177E) 
+                                  : const Color(0xFF0F1120),
                                 foregroundColor: Colors.white,
                                 shadowColor: Colors.transparent,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(7),
                                 ),
                               ),
-                              onPressed: () {}, // Current Page
+                              onPressed: () {},
                               child: Text(
                                 'Login',
                                 style: TextStyle(
@@ -154,7 +162,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.transparent,
-                                foregroundColor: Colors.black,
+                                foregroundColor: isDark ? Colors.white70 : Colors.black,
                                 shadowColor: Colors.transparent,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(7),
@@ -166,7 +174,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontFamily: GoogleFonts.inter().fontFamily,
-                                  color: Colors.black,
                                 ),
                               ),
                             ),
@@ -182,25 +189,32 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: TextFormField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
-                        style: const TextStyle(fontSize: 16, color: Colors.black),
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
                         decoration: InputDecoration(
                           labelText: 'Email',
-                          labelStyle: const TextStyle(color: Colors.grey),
+                          labelStyle: TextStyle(
+                            color: isDark ? Colors.white60 : Colors.grey,
+                          ),
                           filled: true,
-                          fillColor: Colors.white,
+                          fillColor: isDark ? const Color(0xFF1A1D2E) : Colors.white,
                           contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 20),
+                            horizontal: 16,
+                            vertical: 20,
+                          ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: Color(0xFF0025CC),
+                            borderSide: BorderSide(
+                              color: isDark ? Colors.white24 : const Color(0xFF0025CC),
                               width: 2,
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: Color(0xFF0F1120),
+                            borderSide: BorderSide(
+                              color: isDark ? const Color(0xFF00177E) : const Color(0xFF0F1120),
                               width: 2,
                             ),
                           ),
@@ -240,25 +254,32 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: TextFormField(
                         controller: _passwordController,
                         obscureText: true,
-                        style: const TextStyle(fontSize: 16, color: Colors.black),
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
                         decoration: InputDecoration(
                           labelText: 'Password',
-                          labelStyle: const TextStyle(color: Colors.grey),
+                          labelStyle: TextStyle(
+                            color: isDark ? Colors.white60 : Colors.grey,
+                          ),
                           filled: true,
-                          fillColor: Colors.white,
+                          fillColor: isDark ? const Color(0xFF1A1D2E) : Colors.white,
                           contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 20),
+                            horizontal: 16,
+                            vertical: 20,
+                          ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: Color(0xFF0025CC),
+                            borderSide: BorderSide(
+                              color: isDark ? Colors.white24 : const Color(0xFF0025CC),
                               width: 2,
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: Color(0xFF0F1120),
+                            borderSide: BorderSide(
+                              color: isDark ? const Color(0xFF00177E) : const Color(0xFF0F1120),
                               width: 2,
                             ),
                           ),
@@ -310,10 +331,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 _passwordController.text,
                               );
 
-                              // تمسح بيانات المود المحلية
                               await _clearLocalMoodData();
-
-                              // تحديث AuthController
                               authController.notifyAuthChange();
 
                               if (mounted) {
@@ -376,7 +394,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               "Or login using social media",
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.grey[600],
+                                color: isDark ? Colors.white60 : Colors.grey[600],
                                 fontFamily: GoogleFonts.inter().fontFamily,
                               ),
                             ),
@@ -403,8 +421,11 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             const SizedBox(width: 20),
                             IconButton(
-                              icon: const Icon(Ionicons.logo_apple,
-                                  color: Colors.black, size: 35),
+                              icon: Icon(
+                                Ionicons.logo_apple,
+                                color: isDark ? Colors.white : Colors.black,
+                                size: 35,
+                              ),
                               onPressed: () {
                                 print("Apple login");
                               },

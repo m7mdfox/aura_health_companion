@@ -85,7 +85,6 @@ class _AIInsightsScreenState extends State<AIInsightsScreen> {
           return;
         }
 
-        // Parse JSON insights
         try {
           final insightsJson = jsonDecode(rawInsights);
           final List<dynamic> notesList = insightsJson['notes'] ?? [];
@@ -137,112 +136,90 @@ class _AIInsightsScreenState extends State<AIInsightsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: _buildAppBar(),
+      backgroundColor: isDark ? const Color(0xFF0F1120) : const Color(0xFFF5F7FA),
+      appBar: _buildAppBar(isDark),
       body: SafeArea(
         child: _isLoading
-            ? _buildLoading()
+            ? _buildLoading(isDark)
             : _error != null
-                ? _buildError()
-                : _buildNotesList(),
+                ? _buildError(isDark)
+                : _buildNotesList(isDark),
       ),
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
-    return PreferredSize(
-      preferredSize: const Size.fromHeight(70),
-      child: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        shadowColor: Colors.black.withOpacity(0.06),
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
+  PreferredSizeWidget _buildAppBar(bool isDark) {
+    return AppBar(
+      title: Text(
+        moodLabel != null ? 'AI Notes • $moodLabel' : 'AI Notes',
+        style: TextStyle(
+          fontFamily: GoogleFonts.poppins().fontFamily,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
         ),
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 16),
-          child: _backButton(),
-        ),
-        title: Text(
-          moodLabel != null ? 'AI Notes • $moodLabel' : 'AI Notes',
-          style: GoogleFonts.poppins(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: const Color(0xFF1E293B),
+      ),
+      centerTitle: true,
+      flexibleSpace: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isDark
+                ? [const Color(0xFF1A1D2E), const Color(0xFF0F1120)]
+                : [const Color(0xFF00177E), const Color(0xFF0F1120)],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
           ),
         ),
-        centerTitle: true,
       ),
     );
   }
 
-  Widget _backButton() {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(30),
-        onTap: () => Navigator.pop(context),
-        child: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF1F5F9),
-            shape: BoxShape.circle,
-            border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.06),
-                blurRadius: 10,
-                offset: const Offset(1, 2),
-              ),
-            ],
-          ),
-          child: const Icon(Ionicons.arrow_back, color: Color(0xFF475569), size: 22),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLoading() {
+  Widget _buildLoading(bool isDark) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 20)],
+          CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(
+              isDark ? Colors.white : const Color(0xFF00177E),
             ),
-            child: const CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF8B5CF6)),
-              strokeWidth: 3,
-            ),
+            strokeWidth: 3,
           ),
           const SizedBox(height: 24),
           Text(
             'Generating your notes...',
-            style: GoogleFonts.poppins(fontSize: 16, color: const Color(0xFF64748B)),
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              color: isDark ? Colors.white70 : const Color(0xFF64748B),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildError() {
+  Widget _buildError(bool isDark) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Ionicons.cloud_offline_outline, size: 80, color: Colors.grey.shade400),
+            Icon(
+              Ionicons.cloud_offline_outline,
+              size: 80,
+              color: isDark ? Colors.white38 : Colors.grey.shade400,
+            ),
             const SizedBox(height: 20),
             Text(
               _error!,
               textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(fontSize: 16, color: const Color(0xFF64748B)),
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                color: isDark ? Colors.white70 : const Color(0xFF64748B),
+              ),
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
@@ -250,9 +227,12 @@ class _AIInsightsScreenState extends State<AIInsightsScreen> {
               icon: const Icon(Ionicons.refresh, size: 18),
               label: const Text('Retry'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF8B5CF6),
+                backgroundColor: const Color(0xFF00177E),
+                foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
             ),
           ],
@@ -261,43 +241,48 @@ class _AIInsightsScreenState extends State<AIInsightsScreen> {
     );
   }
 
-  Widget _buildNotesList() {
+  Widget _buildNotesList(bool isDark) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
-          _buildHeader(),
+          _buildHeader(isDark),
           const SizedBox(height: 24),
-
-          // === البطاقات عموديًا ===
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: notes!.length,
             separatorBuilder: (_, __) => const SizedBox(height: 16),
-            itemBuilder: (context, index) => _buildNoteCard(notes![index], index),
+            itemBuilder: (context, index) => _buildNoteCard(notes![index], index, isDark),
           ),
-
           const SizedBox(height: 28),
-          _buildHomeButton(),
+          _buildHomeButton(isDark),
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(bool isDark) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [moodColor!, moodColor!.withOpacity(0.85)],
+          colors: moodColor != null
+              ? [moodColor!, moodColor!.withOpacity(0.85)]
+              : isDark
+                  ? [const Color(0xFF1A1D2E), const Color(0xFF2D1B69)]
+                  : [const Color(0xFF00177E), const Color(0xFF1B1E36)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: moodColor!.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 10)),
+          BoxShadow(
+            color: (moodColor ?? const Color(0xFF00177E)).withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
         ],
       ),
       child: Row(
@@ -305,8 +290,8 @@ class _AIInsightsScreenState extends State<AIInsightsScreen> {
           Container(
             width: 56,
             height: 56,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)]),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
             child: const Icon(Ionicons.sparkles, color: Colors.white, size: 30),
@@ -318,11 +303,18 @@ class _AIInsightsScreenState extends State<AIInsightsScreen> {
               children: [
                 Text(
                   'Your AI Notes',
-                  style: GoogleFonts.poppins(color: Colors.white, fontSize: 19, fontWeight: FontWeight.bold),
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontSize: 19,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 Text(
                   'Quick insights for today',
-                  style: GoogleFonts.poppins(color: Colors.white.withOpacity(0.9), fontSize: 13),
+                  style: GoogleFonts.poppins(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 13,
+                  ),
                 ),
               ],
             ),
@@ -332,7 +324,7 @@ class _AIInsightsScreenState extends State<AIInsightsScreen> {
     );
   }
 
-  Widget _buildNoteCard(String text, int index) {
+  Widget _buildNoteCard(String text, int index, bool isDark) {
     final icons = [
       Ionicons.document_text_outline,
       Ionicons.heart_outline,
@@ -347,47 +339,51 @@ class _AIInsightsScreenState extends State<AIInsightsScreen> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1A1D2E) : Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: isDark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.black.withOpacity(0.06),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
-        border: Border.all(color: moodColor!.withOpacity(0.2), width: 1),
+        border: Border.all(
+          color: moodColor != null
+              ? moodColor!.withOpacity(0.2)
+              : (isDark ? Colors.white12 : Colors.grey.shade200),
+          width: 1,
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Icon
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: moodColor!.withOpacity(0.15),
+              color: moodColor != null
+                  ? moodColor!.withOpacity(0.15)
+                  : (isDark ? Colors.white12 : const Color(0xFFE0E7FF)),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
               icons[index % icons.length],
-              color: moodColor,
+              color: moodColor ?? const Color(0xFF00177E),
               size: 22,
             ),
           ),
           const SizedBox(width: 14),
-
-          // Text (يتكيف مع الطول)
           Expanded(
             child: Text(
               text,
               style: GoogleFonts.poppins(
                 fontSize: 15,
                 height: 1.5,
-                color: const Color(0xFF1E293B),
+                color: isDark ? Colors.white : const Color(0xFF1E293B),
                 fontWeight: FontWeight.w500,
               ),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
@@ -395,7 +391,7 @@ class _AIInsightsScreenState extends State<AIInsightsScreen> {
     );
   }
 
-  Widget _buildHomeButton() {
+  Widget _buildHomeButton(bool isDark) {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
@@ -406,11 +402,14 @@ class _AIInsightsScreenState extends State<AIInsightsScreen> {
           style: GoogleFonts.poppins(fontSize: 17, fontWeight: FontWeight.w600),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: moodColor,
+          backgroundColor: moodColor ?? const Color(0xFF00177E),
+          foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 18),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
           elevation: 8,
-          shadowColor: moodColor!.withOpacity(0.4),
+          shadowColor: (moodColor ?? const Color(0xFF00177E)).withOpacity(0.4),
         ),
       ),
     );

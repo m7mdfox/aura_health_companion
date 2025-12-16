@@ -124,11 +124,15 @@ class _ChatbotConversationScreenState extends State<ChatbotConversationScreen> {
   }
 
   Widget _buildMessageBubble(Map<String, dynamic> msg, int index) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isBot = msg['role'] == 'bot';
     final alignment = isBot ? Alignment.centerLeft : Alignment.centerRight;
-    final bubbleColor =
-        isBot ? const Color(0xFFE9F2FF) : const Color(0xFF00177E);
-    final textColor = isBot ? Colors.black87 : Colors.white;
+    final bubbleColor = isBot
+        ? (isDark ? const Color(0xFF1A1D2E) : const Color(0xFFE9F2FF))
+        : const Color(0xFF00177E);
+    final textColor = isBot
+        ? (isDark ? Colors.white : Colors.black87)
+        : Colors.white;
 
     return Align(
       alignment: alignment,
@@ -140,8 +144,12 @@ class _ChatbotConversationScreenState extends State<ChatbotConversationScreen> {
         decoration: BoxDecoration(
           color: bubbleColor,
           borderRadius: BorderRadius.circular(18),
-          boxShadow: const [
-            BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 2)),
+          boxShadow: [
+            BoxShadow(
+              color: isDark ? Colors.black38 : Colors.black12,
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
           ],
         ),
         child: Column(
@@ -194,13 +202,17 @@ class _ChatbotConversationScreenState extends State<ChatbotConversationScreen> {
                     },
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        Icon(Icons.copy, size: 14, color: Colors.black54),
-                        SizedBox(width: 4),
+                      children: [
+                        Icon(
+                          Icons.copy,
+                          size: 14,
+                          color: isDark ? Colors.white54 : Colors.black54,
+                        ),
+                        const SizedBox(width: 4),
                         Text(
                           "Copy",
                           style: TextStyle(
-                            color: Colors.black54,
+                            color: isDark ? Colors.white54 : Colors.black54,
                             fontSize: 12,
                             fontStyle: FontStyle.italic,
                           ),
@@ -217,13 +229,15 @@ class _ChatbotConversationScreenState extends State<ChatbotConversationScreen> {
   }
 
   Widget _buildTypingIndicator() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Align(
       alignment: Alignment.centerLeft,
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: const Color(0xFFE9F2FF),
+          color: isDark ? const Color(0xFF1A1D2E) : const Color(0xFFE9F2FF),
           borderRadius: BorderRadius.circular(18),
         ),
         child: LoadingAnimationWidget.threeArchedCircle(
@@ -236,8 +250,10 @@ class _ChatbotConversationScreenState extends State<ChatbotConversationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: isDark ? const Color(0xFF0F1120) : const Color(0xFFF8FAFC),
       appBar: AppBar(
         backgroundColor: const Color(0xFF00177E),
         foregroundColor: Colors.white,
@@ -291,10 +307,10 @@ class _ChatbotConversationScreenState extends State<ChatbotConversationScreen> {
                             fit: BoxFit.contain,
                           ),
                           const SizedBox(height: 20),
-                          const Text(
+                          Text(
                             "Hello 👋 I'm Aura, your wellness assistant.\nAsk me anything to get started!",
                             style: TextStyle(
-                              color: Colors.black54,
+                              color: isDark ? Colors.white70 : Colors.black54,
                               fontSize: 16,
                               height: 1.5,
                               fontWeight: FontWeight.w500,
@@ -323,13 +339,13 @@ class _ChatbotConversationScreenState extends State<ChatbotConversationScreen> {
             child: Container(
               padding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: const BoxDecoration(
-                color: Colors.white,
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1A1D2E) : Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black12,
+                    color: isDark ? Colors.black38 : Colors.black12,
                     blurRadius: 10,
-                    offset: Offset(0, -2),
+                    offset: const Offset(0, -2),
                   ),
                 ],
               ),
@@ -338,12 +354,18 @@ class _ChatbotConversationScreenState extends State<ChatbotConversationScreen> {
                   Expanded(
                     child: TextField(
                       controller: _controller,
+                      style: TextStyle(
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
                       decoration: InputDecoration(
                         hintText: _editingIndex != null
                             ? 'Edit your message...'
                             : 'Type your message...',
+                        hintStyle: TextStyle(
+                          color: isDark ? Colors.white38 : Colors.grey,
+                        ),
                         filled: true,
-                        fillColor: const Color(0xFFF1F3F6),
+                        fillColor: isDark ? const Color(0xFF0F1120) : const Color(0xFFF1F3F6),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(30),
                           borderSide: BorderSide.none,

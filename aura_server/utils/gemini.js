@@ -3,7 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import fetch from "node-fetch";
 globalThis.fetch = fetch;
 
-const genAI = new GoogleGenerativeAI("AIzaSyCjiczTIoQcBHu8j6ig-QMcggLG00VSQ-A");
+const genAI = new GoogleGenerativeAI("AIzaSyA2DDNmjIbj7aJqV0ewT3r19IMhu05IUXs");
 const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
 export async function generateInsights(mood_type, answers, language = "en") {

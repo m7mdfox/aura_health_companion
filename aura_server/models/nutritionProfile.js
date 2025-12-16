@@ -2,18 +2,36 @@ import mongoose from "mongoose";
 
 const NutritionProfileSchema = new mongoose.Schema({
   userAuthId: { type: String, required: true, index: true },
-  
-  // Changed to generic String to allow saving any user choice
   lifestyle: { type: String, default: "" }, 
-  
-  // Changed to generic String
   eatingRelation: { type: String, default: "" }, 
-  
   mealTimes: [{ type: String }], 
+  improvementGoal: { type: String, default: "" },
   
-  // ADDED THIS FIELD (It was missing in your previous database save)
-  improvementGoal: { type: String, default: "" }, 
+  goalType: { 
+    type: String, 
+    enum: ["lose_weight", "gain_weight", "maintain", "build_muscle", ""],
+    default: "" 
+  },
   
+  dietType: { 
+    type: String, 
+    enum: ["balanced", "keto", "low_carb", "intermittent_fasting", ""],
+    default: "" 
+  },
+  
+  ifSchedule: { 
+    type: String, 
+    enum: ["16_8", "18_6", "omad", ""],
+    default: "" 
+  },
+  
+  activityLevel: { 
+    type: String, 
+    enum: ["sedentary", "lightly_active", "moderately_active", "very_active", "extra_active", ""],
+    default: "" 
+  },
+  
+  chronicDiseases: [{ type: String }],
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });
@@ -23,4 +41,5 @@ NutritionProfileSchema.pre('save', function(next) {
   next();
 });
 
-export default mongoose.model("NutritionProfile", NutritionProfileSchema);
+const NutritionProfile = mongoose.models.NutritionProfile || mongoose.model("NutritionProfile", NutritionProfileSchema);
+export default NutritionProfile;
