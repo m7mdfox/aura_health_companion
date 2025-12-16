@@ -8,7 +8,7 @@ class VitalSimulator {
   List<Map<String, dynamic>> _normalData = [];
   int _currentIndex = 0;
 
-  final double _alertProbability = 0.9;
+  final double _alertProbability = 0.3;
 
   final int heartRateLowThreshold = 40;
   final int heartRateHighThreshold = 120;
