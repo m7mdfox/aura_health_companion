@@ -1,18 +1,18 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../models/doctor_model.dart'; 
-import '../models/appointment_model.dart'; 
+import '../models/doctor_model.dart';
+import '../models/appointment_model.dart';
 
 class ApiService {
   // ✅ تأكد أن البورت هو 4000 كما هو في server.js الخاص بك
-  static const String baseUrl = 'http://10.0.2.2:4000'; 
+  static const String baseUrl = 'http://10.0.2.2:4000';
 
   // --- Doctors ---
-  
+
   static Future<List<Doctor>> getDoctors() async {
     // ✅ إضافة /api لتتوافق مع server.js
     final url = Uri.parse('$baseUrl/api/doctors');
-    
+
     print("Flutter Request: $url"); // للمراقبة
 
     final response = await http.get(url);
@@ -39,7 +39,7 @@ class ApiService {
   }) async {
     // ✅ إضافة /api
     final url = Uri.parse('$baseUrl/api/appointments/request');
-    
+
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
@@ -59,17 +59,25 @@ class ApiService {
     }
   }
 
-  static Future<List<Appointment>> getPatientAppointments(String patientId) async {
+  static Future<List<Appointment>> getPatientAppointments(
+      String patientId) async {
     // ✅ إضافة /api
     final url = Uri.parse('$baseUrl/api/appointments/patient/$patientId');
-    
+
+    print("Flutter Request: $url"); // للمراقبة
+
     final response = await http.get(url);
+
+    print("Appointments Response Status: ${response.statusCode}");
+    print(
+        "Appointments Response Body: ${response.body.substring(0, response.body.length > 500 ? 500 : response.body.length)}");
 
     if (response.statusCode == 200) {
       final List<dynamic> body = jsonDecode(response.body);
       return body.map((json) => Appointment.fromJson(json)).toList();
     } else {
-      throw Exception('Failed to load appointments');
+      throw Exception(
+          'Failed to load appointments: ${response.statusCode} - ${response.body}');
     }
   }
 }

@@ -1,39 +1,57 @@
 import express from "express";
-import mongoose from "mongoose"; // <--- THIS WAS MISSING
+import mongoose from "mongoose";
 import Appointment from "../models/Appointment.js";
+import Doctor from "../models/Doctor.js"; // Required for populate to work
 
 const router = express.Router();
 
+// In Node.js doctorController.js
+// ✅ GET DOCTOR APPOINTMENTS (SAFE MODE - NO SKIPPING)
 router.get("/doctor/:doctorId", async (req, res) => {
-  console.log(`\n--- 🔍 DIAGNOSTIC MODE ---`);
   try {
-    // 1. WHAT DB ARE WE IN?
-    console.log("🔥 Connected Database Name:", mongoose.connection.name);
-    
-    // 2. IS THE COLLECTION EMPTY?
-    const profileCount = await mongoose.model("Profile").countDocuments();
-    console.log(`📊 Total Profiles Found in '${mongoose.connection.name}':`, profileCount);
+    console.log(`\n--- Fetching for Doctor: ${req.params.doctorId} ---`);
 
-    if (profileCount === 0) {
-      console.log("❌ ERROR: The 'profiles' collection is empty or does not exist in this database.");
-      console.log("   -> Check if your actual database is named 'test', 'aura_db' (lowercase), or 'AURA_DB'.");
-    } else {
-      // 3. IF NOT EMPTY, LIST ONE ID TO COMPARE
-      const firstProfile = await mongoose.model("Profile").findOne();
-      console.log("✅ First Profile ID found:", firstProfile._id);
-      
-      const targetAppt = await Appointment.findOne({ doctor_id: req.params.doctorId });
-      if (targetAppt) {
-         console.log("🎯 Looking for ID:", targetAppt.patient_id);
-      }
-    }
-
-    // 4. Run the populate attempt
-    const appts = await Appointment.find({ doctor_id: req.params.doctorId })
+    const rawAppts = await Appointment.find({ doctor_id: req.params.doctorId })
       .populate("patient_id", "full_name email")
       .sort({ appointment_date: -1 });
 
-    res.json(appts);
+    const cleanList = rawAppts.map(appt => {
+      // --- LOGIC TO HANDLE BROKEN IDs ---
+      let pId = "Unknown_ID";
+      let pName = "Unknown Patient";
+      let pEmail = "N/A";
+
+      // Case 1: Populate worked (Perfect)
+      if (appt.patient_id && appt.patient_id.full_name) {
+        pId = appt.patient_id._id;
+        pName = appt.patient_id.full_name;
+        pEmail = appt.patient_id.email;
+      }
+      // Case 2: Populate failed (The "Zombie" case)
+      else {
+        console.log(`⚠️ Keeping broken appointment ${appt._id} visible.`);
+        // Try to recover the raw ID if it exists, otherwise keep "Unknown_ID"
+        if (appt.patient_id) pId = appt.patient_id.toString();
+      }
+
+      return {
+        _id: appt._id,
+        doctor_id: appt.doctor_id,
+        patient_id: pId.toString(),
+        patient_name: pName,
+        patient_email: pEmail,
+        appointment_date: appt.appointment_date,
+        start_time: appt.start_time,
+        end_time: appt.end_time,
+        type: appt.type,
+        status: appt.status,
+        notes: appt.notes
+      };
+    });
+
+    // Send the list (Do NOT filter anything out)
+    res.json(cleanList);
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -43,11 +61,17 @@ router.get("/doctor/:doctorId", async (req, res) => {
 // ✅ GET PATIENT APPOINTMENTS
 router.get("/patient/:patientId", async (req, res) => {
   try {
+    console.log(`\n--- Fetching appointments for Patient: ${req.params.patientId} ---`);
+
     const appts = await Appointment.find({ patient_id: req.params.patientId })
       .populate("doctor_id")
       .sort({ appointment_date: -1 });
+
+    console.log(`Found ${appts.length} appointments for patient ${req.params.patientId}`);
+
     res.json(appts);
   } catch (err) {
+    console.error("Error fetching patient appointments:", err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -71,7 +95,7 @@ router.put("/:id/status", async (req, res) => {
 router.post("/request", async (req, res) => {
   try {
     const { doctor_id, patient_id, appointment_date, start_time, end_time, type, notes } = req.body;
-    
+
     const appt = new Appointment({
       doctor_id,
       patient_id,

@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
-  static const String _base = 'http://192.168.1.6:4000'; // Android emulator; use 'http://localhost:4000' for iOS/desktop
+  static const String _base = 'http://10.0.2.2:4000'; // Android emulator; use 'http://localhost:4000' for iOS/desktop
   static String? _token;
   static Map<String, dynamic>? _profile;
 

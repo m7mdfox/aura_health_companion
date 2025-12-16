@@ -1,8 +1,9 @@
+import 'dart:async';
 import 'package:aura_health_companion/models/appointment_model.dart';
 import 'package:aura_health_companion/models/doctor_model.dart';
 import 'package:aura_health_companion/services/api_service.dart';
+import 'package:aura_health_companion/data/auth_service.dart'; // Ensure this path is correct
 import 'package:aura_health_companion/ui/screens/doctor/chat-screen.dart';
-// ⚠️ Ensure this path matches your project structure
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ionicons/ionicons.dart';
@@ -18,14 +19,16 @@ class DoctorRequestScreen extends StatefulWidget {
 class _DoctorRequestScreenState extends State<DoctorRequestScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  Timer? _autoRefreshTimer;
   
-  // ⚠️ YOUR PATIENT ID (Ensure this matches your MongoDB User ID)
-  final String currentPatientId = "6924a7834e2c2e78e900a5ce"; 
+  // State Variables
+  String? currentPatientId;
+  List<Doctor> _doctors = [];
+  List<Appointment> _appointments = [];
+  bool _isLoading = true;
+  String? _errorMessage;
 
-  late Future<List<Doctor>> _doctorsFuture;
-  late Future<List<Appointment>> _appointmentsFuture;
-
-  // Search & Filter State
+  // Search & Filter
   int _selectedFilterIndex = 0;
   String _searchQuery = "";
   final List<String> _filters = ["All", "Cardiology", "Neurology", "Dermatology", "Psychiatry"];
@@ -34,66 +37,137 @@ class _DoctorRequestScreenState extends State<DoctorRequestScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _fetchData();
-  }
+    
+    _loadUserAndData();
 
-  void _fetchData() {
-    setState(() {
-      _doctorsFuture = ApiService.getDoctors();
-      _appointmentsFuture = ApiService.getPatientAppointments(currentPatientId);
+    // Auto-Refresh
+    _autoRefreshTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+      if (currentPatientId != null && mounted) {
+        _fetchAppointments(silent: true);
+      }
     });
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _autoRefreshTimer?.cancel();
     super.dispose();
   }
 
-  // ---------------------------------------------------------------------------
-  // 🔍 THE ROBUST "IS CHAT ACTIVE?" LOGIC
-  // ---------------------------------------------------------------------------
+  // --- 1. USER AUTH CHECK ---
+  Future<void> _loadUserAndData() async {
+    setState(() => _isLoading = true);
+
+    Map<String, dynamic>? profile = AuthService.profile;
+
+    if (profile == null) {
+      await AuthService.init();
+      profile = AuthService.profile;
+    }
+
+    if (profile != null) {
+      print("🔍 DEBUG PROFILE KEYS: ${profile.keys.toList()}"); 
+      
+      // FIX IS HERE: Prioritize '_id'
+      String? id = profile['_id'] ?? profile['id'] ?? profile['auth_id'];
+      
+      if (id != null) {
+        print("✅ Found Patient ID (Profile ID): $id");
+        setState(() => currentPatientId = id);
+        await _fetchAllData();
+      } else {
+        setState(() {
+          _errorMessage = "User ID not found in profile.";
+          _isLoading = false;
+        });
+      }
+    } else {
+      setState(() {
+        _errorMessage = "Not logged in.";
+        _isLoading = false;
+      });
+    }
+  }
+  // --- 2. DATA FETCHING ---
+  Future<void> _fetchAllData() async {
+    if (currentPatientId == null) return;
+    try {
+      final doctors = await ApiService.getDoctors();
+      final appointments = await ApiService.getPatientAppointments(currentPatientId!);
+      
+      if (mounted) {
+        setState(() {
+          _doctors = doctors;
+          _appointments = appointments;
+          _isLoading = false;
+          _errorMessage = null;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          if (_doctors.isEmpty && _appointments.isEmpty) {
+            _errorMessage = "Failed to load data: $e";
+          }
+        });
+      }
+    }
+  }
+
+  Future<void> _fetchAppointments({bool silent = false}) async {
+    if (currentPatientId == null) return;
+    try {
+      final appointments = await ApiService.getPatientAppointments(currentPatientId!);
+      if (mounted) {
+        setState(() => _appointments = appointments);
+      }
+    } catch (e) {
+      print("Silent refresh failed: $e");
+    }
+  }
+
+  // --- 3. HELPER: IS CHAT ACTIVE? ---
   bool _isAppointmentActive(Appointment appt) {
-    // 1. Check Status
+    // 1. Status Check
     if (appt.status.toLowerCase() != 'confirmed') return false;
 
     final now = DateTime.now();
+    
+    // 2. Date Check (Convert UTC from DB to Local Device Time)
+    // Server sends: 2025-12-12T22:00:00.000Z
+    final apptDateLocal = appt.date.toLocal(); 
 
-    // 2. CONVERT UTC TO LOCAL TIME
-    // This is critical. MongoDB dates are UTC. Your phone is Local.
-    // Without this, "Today" might look like "Yesterday" or "Tomorrow".
-    final apptDateLocal = appt.date.toLocal();
-
-    // 3. Check Date Match
     bool isSameDay = apptDateLocal.year == now.year && 
                      apptDateLocal.month == now.month && 
                      apptDateLocal.day == now.day;
     
     if (!isSameDay) return false;
 
+    // 3. Time Window Check
     try {
-      // 4. Parse "HH:mm" Strings
+      // Parse strings like "22:10"
       DateFormat timeFormat = DateFormat("HH:mm");
       DateTime startParsed = timeFormat.parse(appt.startTime);
       DateTime endParsed = timeFormat.parse(appt.endTime);
 
-      // 5. Build Today's Date Objects
-      // We take the HOURS from the parsed string and combine them with TODAY'S date.
+      // Create full DateTime objects for Today using the parsed times
       DateTime startDateTime = DateTime(now.year, now.month, now.day, startParsed.hour, startParsed.minute);
       DateTime endDateTime = DateTime(now.year, now.month, now.day, endParsed.hour, endParsed.minute);
 
-      // 6. Check Time Window (Inclusive)
-      // We subtract/add 1 minute buffer to handle exact minute matches
-      return now.isAfter(startDateTime.subtract(const Duration(minutes: 1))) && 
-             now.isBefore(endDateTime.add(const Duration(minutes: 1)));
+      // STRICT CHECK: Current time must be >= Start AND <= End
+      // (Using isAfter/isBefore inclusive logic)
+      return now.isAfter(startDateTime.subtract(const Duration(seconds: 1))) && 
+             now.isBefore(endDateTime.add(const Duration(seconds: 1)));
 
     } catch (e) {
-      print("Error parsing appointment time: $e");
+      print("Time parsing error: $e");
       return false;
     }
   }
 
-  // --- Helper: Calculate End Time String ---
+  // --- 4. APPOINTMENT SUBMISSION (FIXED) ---
   String _calculateEndTime(String startTime, int durationMinutes) {
     final format = DateFormat("HH:mm"); 
     final start = format.parse(startTime);
@@ -101,10 +175,27 @@ class _DoctorRequestScreenState extends State<DoctorRequestScreen>
     return format.format(end);
   }
 
-  // --- Helper: Submit to Backend ---
   Future<void> _submitAppointmentRequest(
       Doctor doctor, DateTime date, TimeOfDay time, String type, String notes) async {
     
+    // --- FIX START: Emergency ID Check ---
+    String? validId = currentPatientId;
+    if (validId == null) {
+       // Try to fetch one last time directly from Auth
+       final profile = AuthService.profile;
+       validId = profile?['auth_id'] ?? profile?['_id'] ?? profile?['id'];
+    }
+
+    if (validId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+         const SnackBar(content: Text("❌ Error: User ID is null. Cannot book."), backgroundColor: Colors.red),
+      );
+      return;
+    }
+    // --- FIX END ---
+
+    print("🚀 SENDING APPOINTMENT - Patient ID: $validId"); // CHECK YOUR CONSOLE FOR THIS
+
     showDialog(
       context: context, 
       barrierDismissible: false,
@@ -113,16 +204,12 @@ class _DoctorRequestScreenState extends State<DoctorRequestScreen>
 
     try {
       final String startStr = "${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}";
-      
-      final int duration = type.toLowerCase() == 'examination' 
-          ? doctor.examDuration 
-          : doctor.consultDuration;
-
+      final int duration = type.toLowerCase() == 'examination' ? doctor.examDuration : doctor.consultDuration;
       final String endStr = _calculateEndTime(startStr, duration);
 
       await ApiService.createAppointment(
         doctorId: doctor.id,
-        patientId: currentPatientId,
+        patientId: validId, // Use the validated ID
         date: date,
         startTime: startStr,
         endTime: endStr,
@@ -135,28 +222,46 @@ class _DoctorRequestScreenState extends State<DoctorRequestScreen>
         Navigator.pop(context); // Close summary
         
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Request Sent Successfully!"), backgroundColor: Colors.green),
+          const SnackBar(content: Text("Request Sent!"), backgroundColor: Colors.green),
         );
         
-        _fetchData(); 
+        // Force immediate refresh
+        _fetchAllData(); 
         _tabController.animateTo(1); 
       }
-
     } catch (e) {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: ${e.toString().replaceAll('Exception:', '')}"), backgroundColor: Colors.red),
+          SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
         );
       }
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // UI BUILD
-  // ---------------------------------------------------------------------------
+  // --- UI BUILD ---
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (_errorMessage != null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text("Error"), leading: const BackButton()),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(_errorMessage!, textAlign: TextAlign.center, style: GoogleFonts.poppins(color: Colors.red)),
+              const SizedBox(height: 10),
+              ElevatedButton(onPressed: _loadUserAndData, child: const Text("Retry"))
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -188,13 +293,24 @@ class _DoctorRequestScreenState extends State<DoctorRequestScreen>
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // TAB 1: FIND DOCTOR (Dynamic Search & Filter)
-  // ---------------------------------------------------------------------------
+  // --- TAB 1: FIND DOCTOR ---
   Widget _buildFindDoctorTab() {
+    List<Doctor> displayDoctors = List.from(_doctors);
+    
+    if (_selectedFilterIndex != 0) {
+        final filter = _filters[_selectedFilterIndex].toLowerCase();
+        displayDoctors = displayDoctors.where((d) => d.specialty.toLowerCase().contains(filter)).toList();
+    }
+    if (_searchQuery.isNotEmpty) {
+      final query = _searchQuery.toLowerCase();
+      displayDoctors = displayDoctors.where((d) => 
+        d.name.toLowerCase().contains(query) || 
+        d.specialty.toLowerCase().contains(query)
+      ).toList();
+    }
+
     return Column(
       children: [
-        // Search Bar
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: TextField(
@@ -209,7 +325,6 @@ class _DoctorRequestScreenState extends State<DoctorRequestScreen>
             ),
           ),
         ),
-        // Filters
         SizedBox(
           height: 40,
           child: ListView.builder(
@@ -242,45 +357,17 @@ class _DoctorRequestScreenState extends State<DoctorRequestScreen>
           ),
         ),
         const SizedBox(height: 16),
-        
         Expanded(
-          child: FutureBuilder<List<Doctor>>(
-            future: _doctorsFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              } else if (snapshot.hasError) {
-                return Center(child: Text("Error: ${snapshot.error}"));
-              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return const Center(child: Text("No doctors found"));
-              }
-
-              // Filter Logic
-              List<Doctor> doctors = snapshot.data!;
-              
-              // 1. Category Filter
-              if (_selectedFilterIndex != 0) {
-                 final filter = _filters[_selectedFilterIndex].toLowerCase();
-                 doctors = doctors.where((d) => d.specialty.toLowerCase().contains(filter)).toList();
-              }
-              // 2. Search Filter
-              if (_searchQuery.isNotEmpty) {
-                final query = _searchQuery.toLowerCase();
-                doctors = doctors.where((d) => 
-                  d.name.toLowerCase().contains(query) || 
-                  d.specialty.toLowerCase().contains(query)
-                ).toList();
-              }
-
-              if (doctors.isEmpty) return const Center(child: Text("No doctors found"));
-
-              return ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                itemCount: doctors.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 16),
-                itemBuilder: (context, index) => _buildDoctorCard(doctors[index]),
-              );
-            },
+          child: RefreshIndicator(
+            onRefresh: _fetchAllData,
+            child: displayDoctors.isEmpty 
+              ? ListView(children: [const Center(child: Padding(padding: EdgeInsets.only(top: 50), child: Text("No doctors found")))])
+              : ListView.separated(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  itemCount: displayDoctors.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 16),
+                  itemBuilder: (context, index) => _buildDoctorCard(displayDoctors[index]),
+                ),
           ),
         ),
       ],
@@ -336,156 +423,140 @@ class _DoctorRequestScreenState extends State<DoctorRequestScreen>
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // TAB 2: REQUESTS
-  // ---------------------------------------------------------------------------
+  // --- TAB 2: REQUESTS ---
   Widget _buildRequestsTab() {
-    return FutureBuilder<List<Appointment>>(
-      future: _appointmentsFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-        if (!snapshot.hasData || snapshot.data!.isEmpty) return Center(child: Text("No requests yet", style: GoogleFonts.poppins(color: Colors.grey)));
-
-        return ListView.separated(
-          padding: const EdgeInsets.all(16),
-          itemCount: snapshot.data!.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
-          itemBuilder: (context, index) {
-            final req = snapshot.data![index];
-            Color statusColor = req.status == 'confirmed' ? Colors.green : Colors.orange;
-            
-            return Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
-              ),
-              child: Row(
-                children: [
-                  const Icon(Ionicons.calendar, color: Colors.blueAccent),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(req.doctor?.name ?? "Unknown", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
-                        Text("${req.type} • ${req.startTime}", style: GoogleFonts.poppins(fontSize: 12, color: Colors.black54)),
-                        Text(DateFormat('yyyy-MM-dd').format(req.date), style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey)),
-                      ],
+    return RefreshIndicator(
+      onRefresh: _fetchAllData,
+      child: _appointments.isEmpty 
+        ? ListView(children: [Center(child: Padding(padding: EdgeInsets.only(top: 50), child: Text("No requests yet", style: GoogleFonts.poppins(color: Colors.grey))))])
+        : ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: _appointments.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final req = _appointments[index];
+              Color statusColor = req.status.toLowerCase() == 'confirmed' ? Colors.green : Colors.orange;
+              
+              return Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Ionicons.calendar, color: Colors.blueAccent),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(req.doctor?.name ?? "Unknown", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+                          Text("${req.type} • ${req.startTime}", style: GoogleFonts.poppins(fontSize: 12, color: Colors.black54)),
+                          Text(DateFormat('yyyy-MM-dd').format(req.date), style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey)),
+                        ],
+                      ),
                     ),
-                  ),
-                  Text(req.status.toUpperCase(), style: GoogleFonts.poppins(color: statusColor, fontWeight: FontWeight.bold, fontSize: 10)),
-                ],
-              ),
-            );
-          },
-        );
-      },
+                    Text(req.status.toUpperCase(), style: GoogleFonts.poppins(color: statusColor, fontWeight: FontWeight.bold, fontSize: 10)),
+                  ],
+                ),
+              );
+            },
+          ),
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // TAB 3: CHAT (Uses _isAppointmentActive)
-  // ---------------------------------------------------------------------------
+  // --- TAB 3: CHAT ---
   Widget _buildChatTab() {
-    return FutureBuilder<List<Appointment>>(
-      future: _appointmentsFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-        
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return Center(child: Text("No appointments found", style: GoogleFonts.poppins(color: Colors.grey)));
-        }
+    final activeChats = _appointments.where((appt) => _isAppointmentActive(appt)).toList();
 
-        // 🔍 FILTER LIST: Only show appointments valid RIGHT NOW
-        final activeChats = snapshot.data!.where((appt) => _isAppointmentActive(appt)).toList();
-
-        if (activeChats.isEmpty) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(30.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Ionicons.chatbubble_ellipses_outline, size: 60, color: Colors.grey),
-                  const SizedBox(height: 20),
-                  Text("No Active Chats", style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey)),
-                  const SizedBox(height: 10),
-                  Text(
-                    "Chat opens only during the confirmed appointment time.",
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(color: Colors.grey.shade400),
+    return RefreshIndicator(
+      onRefresh: _fetchAllData,
+      child: activeChats.isEmpty
+        ? ListView(
+            children: [
+              SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(30.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Ionicons.chatbubble_ellipses_outline, size: 60, color: Colors.grey),
+                      const SizedBox(height: 20),
+                      Text("No Active Chats", style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey)),
+                      const SizedBox(height: 10),
+                      Text(
+                        "Chat opens only during the confirmed appointment time.",
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.poppins(color: Colors.grey.shade400),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-          );
-        }
-
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: activeChats.length,
-          itemBuilder: (context, index) {
-            final appt = activeChats[index];
-            return Container(
-              margin: const EdgeInsets.only(bottom: 16),
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFF00177E),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [BoxShadow(color: const Color(0xFF00177E).withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 5))],
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    height: 50, width: 50,
-                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(15)),
-                    child: const Icon(Ionicons.chatbubbles, color: Colors.white),
-                  ),
-                  const SizedBox(width: 15),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("Session Active", style: GoogleFonts.poppins(color: Colors.greenAccent, fontWeight: FontWeight.bold, fontSize: 12)),
-                        Text(appt.doctor?.name ?? "Doctor", style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                        Text("Ends at ${appt.endTime}", style: GoogleFonts.poppins(color: Colors.white70, fontSize: 12)),
-                      ],
+            ],
+          )
+        : ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: activeChats.length,
+            itemBuilder: (context, index) {
+              final appt = activeChats[index];
+              return Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF00177E),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [BoxShadow(color: const Color(0xFF00177E).withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 5))],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      height: 50, width: 50,
+                      decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(15)),
+                      child: const Icon(Ionicons.chatbubbles, color: Colors.white),
                     ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ChatScreen(
-                            doctorId: appt.doctor?.id ?? "",
-                            doctorName: appt.doctor?.name ?? "Doctor",
-                            patientId: currentPatientId,
+                    const SizedBox(width: 15),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text("Session Active", style: GoogleFonts.poppins(color: Colors.greenAccent, fontWeight: FontWeight.bold, fontSize: 12)),
+                          Text(appt.doctor?.name ?? "Doctor", style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                          Text("Ends at ${appt.endTime}", style: GoogleFonts.poppins(color: Colors.white70, fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ChatScreen(
+                              doctorId: appt.doctor?.id ?? "",
+                              doctorName: appt.doctor?.name ?? "Doctor",
+                              patientId: currentPatientId!,
+                            ),
                           ),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: const Color(0xFF00177E),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                    child: const Text("Join"),
-                  )
-                ],
-              ),
-            );
-          },
-        );
-      },
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: const Color(0xFF00177E),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: const Text("Join"),
+                    )
+                  ],
+                ),
+              );
+            },
+          ),
     );
   }
-
-  // ---------------------------------------------------------------------------
-  // APPOINTMENT FLOW
-  // ---------------------------------------------------------------------------
+  
   void _startAppointmentFlow(Doctor doctor, {
     DateTime? initialDate,
     TimeOfDay? initialTime,
@@ -503,7 +574,7 @@ class _DoctorRequestScreenState extends State<DoctorRequestScreen>
         initialType: initialType,
         initialDesc: initialDesc,
         onSubmit: (date, time, type, desc) {
-          Navigator.pop(context); // Close Form
+          Navigator.pop(context); 
           _showSummaryDialog(doctor, date, time, type, desc);
         },
       ),
@@ -554,9 +625,7 @@ class _DoctorRequestScreenState extends State<DoctorRequestScreen>
   }
 }
 
-// -----------------------------------------------------------------------------
-// LOCAL WIDGET: FORM SHEET (Dynamic Pricing)
-// -----------------------------------------------------------------------------
+// _AppointmentFormSheet Class (Same as before, copy it here)
 class _AppointmentFormSheet extends StatefulWidget {
   final Doctor doctor;
   final DateTime? initialDate;
@@ -619,7 +688,6 @@ class _AppointmentFormSheetState extends State<_AppointmentFormSheet> {
 
   @override
   Widget build(BuildContext context) {
-    // Dynamic Pricing Calculation
     double currentPrice = _visitType == 'Examination' 
         ? widget.doctor.examPrice 
         : widget.doctor.consultPrice;
