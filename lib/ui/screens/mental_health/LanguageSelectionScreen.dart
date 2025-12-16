@@ -3,6 +3,7 @@ import 'package:aura_health_companion/ui/screens/mental_health/questions.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:aura_health_companion/ui/screens/mental_health/mood_questions_screen.dart';
+import 'package:ionicons/ionicons.dart';
 
 class LanguageSelectionScreen extends StatelessWidget {
   final String moodLabel;
@@ -14,80 +15,150 @@ class LanguageSelectionScreen extends StatelessWidget {
     required this.moodColor,
   });
 
-  static final TextStyle _poppins =
-      TextStyle(fontFamily: GoogleFonts.poppins().fontFamily);
-
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: isDark ? const Color(0xFF0F1120) : const Color(0xFFF5F7FA),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? const Color(0xFF1A1D2E) : Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Color(0xFF475569)),
+          icon: Icon(
+            Icons.arrow_back,
+            color: isDark ? Colors.white : const Color(0xFF475569),
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           LocaleProvider.currentLocale == 'ar' ? 'اختر اللغة' : 'Select Language',
-          style: _poppins.copyWith(fontSize: 18, fontWeight: FontWeight.w600),
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: isDark ? Colors.white : const Color(0xFF1E293B),
+          ),
         ),
         centerTitle: true,
       ),
       body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Choose your preferred language',
-              style: _poppins.copyWith(fontSize: 18, color: const Color(0xFF475569)),
-              textAlign: TextAlign.center,
-            ),
-            Text(
-              'اختر لغتك المفضلة',
-              style: _poppins.copyWith(fontSize: 18, color: const Color(0xFF475569)),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildLangButton(context, 'English', 'US', 'en'),
-                const SizedBox(width: 20),
-                _buildLangButton(context, 'العربية', 'SA', 'ar'),
-              ],
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: moodColor.withOpacity(0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Ionicons.language,
+                  color: moodColor,
+                  size: 48,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Choose your preferred language',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  color: isDark ? Colors.white70 : const Color(0xFF475569),
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'اختر لغتك المفضلة',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  color: isDark ? Colors.white70 : const Color(0xFF475569),
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 40),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildLangButton(context, 'English', '🇺🇸', 'en', isDark),
+                  const SizedBox(width: 20),
+                  _buildLangButton(context, 'العربية', '🇸🇦', 'ar', isDark),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildLangButton(BuildContext context, String label, String flag, String locale) {
-    return ElevatedButton(
-      onPressed: () {
-        LocaleProvider.currentLocale = locale;
-        Navigator.pushReplacement(
-          context,
-          PageRouteBuilder(
-            pageBuilder: (_, __, ___) => MoodQuestionsScreen(moodLabel: moodLabel, moodColor: moodColor),
-            transitionDuration: const Duration(milliseconds: 400),
-            transitionsBuilder: (_, a, __, c) => FadeTransition(opacity: a, child: c),
+  Widget _buildLangButton(
+    BuildContext context,
+    String label,
+    String flag,
+    String locale,
+    bool isDark,
+  ) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
-        );
-      },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: moodColor,
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 6,
-      ),
-      child: Row(
-        children: [
-          Text(flag, style: const TextStyle(fontSize: 24)),
-          const SizedBox(width: 8),
-          Text(label, style: _poppins.copyWith(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
         ],
+      ),
+      child: ElevatedButton(
+        onPressed: () {
+          LocaleProvider.currentLocale = locale;
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => MoodQuestionsScreen(
+                moodLabel: moodLabel,
+                moodColor: moodColor,
+              ),
+            ),
+          );
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isDark
+              ? const Color(0xFF1A1D2E)
+              : Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: moodColor.withOpacity(0.3),
+              width: 2,
+            ),
+          ),
+          elevation: 0,
+        ),
+        child: Column(
+          children: [
+            Text(
+              flag,
+              style: const TextStyle(fontSize: 32),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white : const Color(0xFF1E293B),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

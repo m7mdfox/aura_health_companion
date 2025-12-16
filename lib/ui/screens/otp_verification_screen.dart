@@ -30,19 +30,25 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
   Widget build(BuildContext context) {
     final authController = Provider.of<AuthController>(context);
     final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF0F1120) : Colors.white,
       body: Stack(
         children: [
           Positioned(
             top: 0,
             right: 0,
             child: Opacity(
-              opacity: 0.3,
+              opacity: isDark ? 0.2 : 0.3,
               child: Image.asset(
                 'assets/PatternLogin.png',
                 width: screenWidth,
+                height: screenHeight * 0.5,
                 fit: BoxFit.cover,
+                color: isDark ? const Color(0xFF1A1D2E) : null,
+                colorBlendMode: isDark ? BlendMode.modulate : null,
               ),
             ),
           ),
@@ -65,7 +71,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                         fontFamily: GoogleFonts.inter().fontFamily,
-                        color: const Color(0xFF00177E),
+                        color: isDark ? Colors.white : const Color(0xFF00177E),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -74,7 +80,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey[600],
+                        color: isDark ? Colors.white60 : Colors.grey[600],
                         fontFamily: GoogleFonts.inter().fontFamily,
                       ),
                     ),
@@ -85,25 +91,32 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                         controller: _otpController,
                         keyboardType: TextInputType.number,
                         maxLength: 6,
-                        style: const TextStyle(fontSize: 16, color: Colors.black),
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
                         decoration: InputDecoration(
                           labelText: 'OTP',
-                          labelStyle: const TextStyle(color: Colors.grey),
+                          labelStyle: TextStyle(
+                            color: isDark ? Colors.white60 : Colors.grey,
+                          ),
                           filled: true,
-                          fillColor: Colors.white,
+                          fillColor: isDark ? const Color(0xFF1A1D2E) : Colors.white,
                           contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 20),
+                            horizontal: 16,
+                            vertical: 20,
+                          ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: Color(0xFF0025CC),
+                            borderSide: BorderSide(
+                              color: isDark ? Colors.white24 : const Color(0xFF0025CC),
                               width: 2,
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: Color(0xFF0F1120),
+                            borderSide: BorderSide(
+                              color: isDark ? const Color(0xFF00177E) : const Color(0xFF0F1120),
                               width: 2,
                             ),
                           ),
@@ -212,15 +225,13 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                         try {
                           await AuthService.sendOTP(widget.userData['email']);
                           if (mounted) {
-                            _otpController.clear(); // Clear the OTP input field
+                            _otpController.clear();
                             await showDialog(
                               context: context,
                               builder: (context) {
                                 return SuccessAnimation(
-                                  message: 'New OTP sent successfullyyyyy!',
-                                  onComplete: () {
-                                    // Stay on OTP screen
-                                  },
+                                  message: 'New OTP sent successfully!',
+                                  onComplete: () {},
                                 );
                               },
                             );
@@ -239,7 +250,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                               return ErrorAnimation(
                                 message: message,
                                 onDismiss: () {
-                                  Navigator.of(context).pop(); // Stay on OTP screen
+                                  Navigator.of(context).pop();
                                 },
                               );
                             },
@@ -251,6 +262,22 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                         style: TextStyle(
                           fontSize: 16,
                           color: const Color(0xFF0025CC),
+                          fontFamily: GoogleFonts.inter().fontFamily,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    TextButton.icon(
+                      onPressed: _navigateToLogin,
+                      icon: Icon(
+                        Icons.arrow_back,
+                        color: isDark ? Colors.white70 : Colors.grey[600],
+                      ),
+                      label: Text(
+                        'Back to Login',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? Colors.white70 : Colors.grey[600],
                           fontFamily: GoogleFonts.inter().fontFamily,
                         ),
                       ),

@@ -1,19 +1,19 @@
+import 'package:flutter/material.dart';
 import 'package:aura_health_companion/ui/models/user_profile_model.dart';
 import 'package:aura_health_companion/ui/screens/profile/pages/connected_devices.dart';
-import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:aura_health_companion/logic/auth_controller.dart';
 import 'package:aura_health_companion/data/profile_service.dart';
 import 'package:aura_health_companion/data/auth_service.dart';
 import 'package:aura_health_companion/ui/screens/login_screen.dart';
-import 'widgets/profile_stats_card.dart';
-import 'widgets/health_insights_card.dart';
-import 'widgets/profile_menu_item.dart';
-import 'pages/edit_profile_page.dart';
-import 'pages/medical_history_page.dart';
-import 'pages/settings_page.dart';
-import 'pages/about_page.dart';
-import 'pages/help_support_page.dart';
+import 'package:aura_health_companion/ui/screens/profile/widgets/profile_stats_card.dart';
+import 'package:aura_health_companion/ui/screens/profile/widgets/health_insights_card.dart';
+import 'package:aura_health_companion/ui/screens/profile/widgets/profile_menu_item.dart';
+import 'package:aura_health_companion/ui/screens/profile/pages/edit_profile_page.dart';
+import 'package:aura_health_companion/ui/screens/profile/pages/medical_history_page.dart';
+import 'package:aura_health_companion/ui/screens/profile/pages/settings_page.dart';
+import 'package:aura_health_companion/ui/screens/profile/pages/about_page.dart';
+import 'package:aura_health_companion/ui/screens/profile/pages/help_support_page.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});

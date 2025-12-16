@@ -41,10 +41,11 @@ class _ChatbotWelcomeScreenState extends State<ChatbotWelcomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final themeColor = const Color(0xFF00177E);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F4F8),
+      backgroundColor: isDark ? const Color(0xFF0F1120) : const Color(0xFFF2F4F8),
       body: SafeArea(
         child: Column(
           children: [
@@ -56,19 +57,19 @@ class _ChatbotWelcomeScreenState extends State<ChatbotWelcomeScreen> {
                 children: [
                   Text(
                     'Hello, ${widget.userName} 👋',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF00177E),
+                      color: isDark ? Colors.white : const Color(0xFF00177E),
                       height: 1.3,
                     ),
                   ),
                   const SizedBox(height: 6),
-                  const Text(
+                  Text(
                     'How can I assist you today?',
                     style: TextStyle(
                       fontSize: 18,
-                      color: Colors.black54,
+                      color: isDark ? Colors.white70 : Colors.black54,
                     ),
                   ),
                 ],
@@ -85,7 +86,7 @@ class _ChatbotWelcomeScreenState extends State<ChatbotWelcomeScreen> {
                 itemBuilder: (_, i) => Container(
                   margin: const EdgeInsets.only(bottom: 14),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: isDark ? const Color(0xFF1A1D2E) : Colors.white,
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
@@ -103,14 +104,17 @@ class _ChatbotWelcomeScreenState extends State<ChatbotWelcomeScreen> {
                           horizontal: 20, vertical: 18),
                       child: Row(
                         children: [
-                          const Icon(Icons.bolt, color: Color(0xFF00177E)),
+                          Icon(
+                            Icons.bolt,
+                            color: isDark ? Colors.white70 : const Color(0xFF00177E),
+                          ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
                               quickActions[i],
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
-                                color: Colors.black87,
+                                color: isDark ? Colors.white : Colors.black87,
                               ),
                             ),
                           ),
@@ -126,7 +130,7 @@ class _ChatbotWelcomeScreenState extends State<ChatbotWelcomeScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: isDark ? const Color(0xFF1A1D2E) : Colors.white,
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black12.withOpacity(0.08),
@@ -140,16 +144,21 @@ class _ChatbotWelcomeScreenState extends State<ChatbotWelcomeScreen> {
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF7F7F9),
+                        color: isDark ? const Color(0xFF0F1120) : const Color(0xFFF7F7F9),
                         borderRadius: BorderRadius.circular(30),
                       ),
                       child: TextField(
                         controller: _controller,
-                        decoration: const InputDecoration(
+                        style: TextStyle(
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
+                        decoration: InputDecoration(
                           hintText: 'Type your message...',
-                          hintStyle: TextStyle(color: Colors.grey),
+                          hintStyle: TextStyle(
+                            color: isDark ? Colors.white38 : Colors.grey,
+                          ),
                           border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(
+                          contentPadding: const EdgeInsets.symmetric(
                               horizontal: 20, vertical: 14),
                         ),
                         onSubmitted: (_) => _sendMessage(_controller.text),

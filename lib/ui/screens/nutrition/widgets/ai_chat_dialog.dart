@@ -1,4 +1,4 @@
-// lib/ui/screens/nutrition/widgets/ai_chat_dialog.dart (DARK MODE)
+// lib/ui/screens/nutrition/widgets/ai_chat_dialog.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;

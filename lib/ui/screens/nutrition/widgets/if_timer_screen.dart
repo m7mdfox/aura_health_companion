@@ -1,6 +1,4 @@
-// ============================================================================
-// lib/ui/screens/nutrition/widgets/if_timer_screen.dart (DARK MODE ADDED)
-// ============================================================================
+// lib/ui/screens/nutrition/widgets/if_timer_screen.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';

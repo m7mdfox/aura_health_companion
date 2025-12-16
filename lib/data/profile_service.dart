@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:aura_health_companion/ui/models/user_profile_model.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';

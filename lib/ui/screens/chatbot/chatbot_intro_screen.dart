@@ -7,6 +7,8 @@ class ChatbotIntroScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24.0),
       child: Column(
@@ -14,21 +16,25 @@ class ChatbotIntroScreen extends StatelessWidget {
           const Spacer(flex: 2),
 
           // Title
-          const Text(
+          Text(
             'AI BOT NAME',
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF00177E),
+              color: isDark ? Colors.white : const Color(0xFF00177E),
             ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
 
           // Description text
-          const Text(
+          Text(
             'Using this software, you can ask questions and receive articles using an artificial intelligence assistant.',
-            style: TextStyle(fontSize: 16, color: Colors.black54, height: 1.5),
+            style: TextStyle(
+              fontSize: 16,
+              color: isDark ? Colors.white70 : Colors.black54,
+              height: 1.5,
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 50),
