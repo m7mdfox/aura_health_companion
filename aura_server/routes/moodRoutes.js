@@ -3,6 +3,7 @@ import express from "express";
 import Mood from "../models/mood.js";
 import MoodAnswer from "../models/moodAnswer.js";
 import { generateInsights } from "../utils/gemini.js";
+import pointsService from "../services/pointsService.js";
 
 const router = express.Router();
 
@@ -29,6 +30,15 @@ router.post("/", async (req, res) => {
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
 
+    // Check if user already has a mood logged today BEFORE updating
+    const existingMoodToday = await Mood.findOne({
+      auth_id: trimmedAuthId,
+      created_at: { $gte: today, $lt: tomorrow },
+    });
+
+    const isFirstMoodToday = !existingMoodToday;
+    console.log(`📋 Mood check for ${trimmedAuthId}: isFirstMoodToday=${isFirstMoodToday}`);
+
     const updatedMood = await Mood.findOneAndUpdate(
       {
         auth_id: trimmedAuthId,
@@ -48,13 +58,32 @@ router.post("/", async (req, res) => {
       }
     );
 
-    const action = updatedMood.created_at.getTime() === new Date().getTime() ? "saved" : "updated";
-
+    const action = isFirstMoodToday ? "saved" : "updated";
     console.log(`🟢 Mood ${action} for ${trimmedAuthId}: ${normalizedMood}`);
 
-    res.status(updatedMood.isNew ? 201 : 200).json({
+    // Award points for mood logging (only for first mood of the day)
+    let pointsAwarded = null;
+    if (isFirstMoodToday) {
+      try {
+        console.log(`🎯 Attempting to award points for mood log to: ${trimmedAuthId}`);
+        const result = await pointsService.awardMoodLog(trimmedAuthId);
+        console.log(`✅ Points awarded successfully:`, result);
+        pointsAwarded = {
+          points: result.transaction.points,
+          action: 'mood_log',
+          message: `+${result.transaction.points} points for logging your mood! 😊`,
+          newTotal: result.newTotal
+        };
+        console.log(`🎯 Points awarded for mood logging: ${trimmedAuthId}, total: ${result.newTotal}`);
+      } catch (pointsErr) {
+        console.error("❌ Failed to award points for mood log:", pointsErr);
+      }
+    }
+
+    res.status(isFirstMoodToday ? 201 : 200).json({
       message: `Mood ${action} successfully`,
       data: updatedMood,
+      pointsAwarded,
     });
   } catch (err) {
     console.error("❌ Error saving/updating mood:", err);

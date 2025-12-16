@@ -23,6 +23,8 @@ import doctorRoutes from "./routes/doctorRoutes.js";
 import appointmentRoutes from "./routes/appointmentRoutes.js";
 import scheduleRoutes from "./routes/scheduleRoutes.js";
 import aiInsightsRoutes from "./routes/aiInsights.js";
+import pointsRoutes from "./routes/pointsRoutes.js";
+import challengeRoutes from "./routes/challengeRoutes.js";
 
 // Fix for __dirname in ES Modules
 const __filename = fileURLToPath(import.meta.url);
@@ -89,6 +91,8 @@ app.use("/api/doctors", doctorRoutes);
 app.use("/api/appointments", appointmentRoutes);
 app.use("/api/schedules", scheduleRoutes);
 app.use("/api/ai-insights", aiInsightsRoutes);
+app.use("/api/points", pointsRoutes);
+app.use("/api/challenges", challengeRoutes);
 
 // --- NEW ROUTE: Upload Image ---
 app.post("/api/upload", upload.single("file"), (req, res) => {

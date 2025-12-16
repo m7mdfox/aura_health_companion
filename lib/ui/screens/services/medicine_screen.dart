@@ -9,15 +9,15 @@ import 'package:aura_health_companion/ui/screens/services/gemeni_alternative.dar
 // import 'package:aura_health_companion/ui/screens/services_screen.dart'; // Uncomment if you use this
 // import 'package:aura_health_companion/ui/widgets/error_animation.dart';
 // import 'package:aura_health_companion/ui/widgets/success_animation.dart';
-import 'package:aura_health_companion/ui/screens/services/notification_service.dart'; 
+import 'package:aura_health_companion/ui/screens/services/notification_service.dart';
 // import 'package:flutter_local_notifications/flutter_local_notifications.dart';
- // We need this for the `Time` object
+// We need this for the `Time` object
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-
+import 'package:aura_health_companion/ui/widgets/points_notification.dart';
 
 class Medicine {
   final String id;
@@ -49,14 +49,14 @@ class Medicine {
       concentration: json['concentration'] as String?,
       dose: json['dose'] as String,
       frequency: (json['frequency'] is int
-              ? json['frequency']
-              : int.tryParse(json['frequency'].toString()) ?? 0) as int,
+          ? json['frequency']
+          : int.tryParse(json['frequency'].toString()) ?? 0) as int,
       durationDays: (json['duration_days'] is int
-              ? json['duration_days']
-              : int.tryParse(json['duration_days'].toString()) ?? 0) as int,
+          ? json['duration_days']
+          : int.tryParse(json['duration_days'].toString()) ?? 0) as int,
       quantity: (json['quantity'] is int
-              ? json['quantity']
-              : int.tryParse(json['quantity'].toString()) ?? 0) as int,
+          ? json['quantity']
+          : int.tryParse(json['quantity'].toString()) ?? 0) as int,
       activeIngredient: json['active_ingredient'] as String?,
       doseTimes: (json['dose_times'] as List<dynamic>?)
               ?.map((e) => e.toString())
@@ -317,10 +317,8 @@ class _MedicineDetailsDialogContentState
   }
 }
 
-
 // ... This is the end of _MedicineDetailsDialogContentState
-  // <--- This is the LAST '}' of _MedicineDetailsDialogContentState
-
+// <--- This is the LAST '}' of _MedicineDetailsDialogContentState
 
 // 🔽 ADD THIS ENTIRE NEW WIDGET
 /// +++ NEW WIDGET +++
@@ -346,7 +344,7 @@ class _GeminiAIDialogContentState extends State<_GeminiAIDialogContent> {
     super.dispose();
   }
 
- // In _GeminiAIDialogContentState:
+  // In _GeminiAIDialogContentState:
 
 // In _GeminiAIDialogContentState:
 
@@ -401,7 +399,7 @@ Your Response:
       }
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -465,11 +463,12 @@ Your Response:
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               // Input Form
               Form(
                 key: _formKey,
-                child: buildEnhancedInputField( // Use the helper function
+                child: buildEnhancedInputField(
+                  // Use the helper function
                   controller: _textController,
                   label: 'Enter Medicine Name',
                   validator: (value) {
@@ -497,10 +496,9 @@ Your Response:
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade200)
-                  ),
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200)),
                   constraints: BoxConstraints(
                     maxHeight: MediaQuery.of(context).size.height * 0.3,
                   ),
@@ -515,7 +513,7 @@ Your Response:
                     ),
                   ),
                 ),
-              
+
               const SizedBox(height: 24),
 
               // Action Button
@@ -556,43 +554,36 @@ Your Response:
   }
 }
 
-
-
-
-
-
 class _MedicineScreenState extends State<MedicineScreenn> {
-
-
   // Add this function inside _MedicineScreenState
-Future<void> _showTestNotification() async {
-  const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-    'medicine_channel_id', // Use the same channel ID
-    'Medicine Reminders',
-    channelDescription: 'Channel for testing notifications',
-    importance: Importance.max,
-    priority: Priority.high,
-  );
-  const DarwinNotificationDetails iosDetails = DarwinNotificationDetails();
-  const NotificationDetails platformDetails = NotificationDetails(
-    android: androidDetails,
-    iOS: iosDetails,
-  );
-  await _notificationService.flutterLocalNotificationsPlugin.show(
-    999, // Unique ID for test
-    'Test Notification',
-    'If you see this, the plugin is working!',
-    platformDetails,
-  );
-}
-
+  Future<void> _showTestNotification() async {
+    const AndroidNotificationDetails androidDetails =
+        AndroidNotificationDetails(
+      'medicine_channel_id', // Use the same channel ID
+      'Medicine Reminders',
+      channelDescription: 'Channel for testing notifications',
+      importance: Importance.max,
+      priority: Priority.high,
+    );
+    const DarwinNotificationDetails iosDetails = DarwinNotificationDetails();
+    const NotificationDetails platformDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+    await _notificationService.flutterLocalNotificationsPlugin.show(
+      999, // Unique ID for test
+      'Test Notification',
+      'If you see this, the plugin is working!',
+      platformDetails,
+    );
+  }
 
   final NotificationService _notificationService = NotificationService();
 
   final GeminiFeatureService _geminiService = GeminiFeatureService();
-  
+
   // ... other variables
-  
+
   // ...
   // 🔽 ADD THIS NEW FUNCTION (e.g., after _showEnhancedErrorDialog)
   void _showGeminiAIDialog() {
@@ -614,7 +605,7 @@ Future<void> _showTestNotification() async {
     return medIdHash + doseIndex;
   }
 
-Future<void> _scheduleAllNotifications(Medicine medicine) async {
+  Future<void> _scheduleAllNotifications(Medicine medicine) async {
     for (int i = 0; i < medicine.doseTimes.length; i++) {
       final timeStr = medicine.doseTimes[i];
       try {
@@ -637,31 +628,27 @@ Future<void> _scheduleAllNotifications(Medicine medicine) async {
 
           print('Scheduled notification $notificationId for $timeStr');
         } else {
-          print(
-              'Error parsing time string, hour or minute was null: $timeStr');
+          print('Error parsing time string, hour or minute was null: $timeStr');
         }
       } catch (e) {
         print('Error scheduling notification for $timeStr: $e');
       }
     }
   }
-  
+
   // +++ ADD THIS FUNCTION +++
-  Future<void> _cancelAllNotificationsForMedicine(String medicineId, int doseCount) async {
+  Future<void> _cancelAllNotificationsForMedicine(
+      String medicineId, int doseCount) async {
     for (int i = 0; i < doseCount; i++) {
       try {
         final int notificationId = _generateNotificationId(medicineId, i);
         await _notificationService.cancelNotification(notificationId);
         print('Cancelled notification $notificationId');
-      } catch(e) {
+      } catch (e) {
         print('Error cancelling notification: $e');
       }
     }
   }
-
-
-
-
 
   final _addMedicineFormKey = GlobalKey<FormState>();
   final _checkInteractionFormKey = GlobalKey<FormState>();
@@ -726,7 +713,7 @@ Future<void> _scheduleAllNotifications(Medicine medicine) async {
   // +------------------------------------------------------------+
 
   /// Gets the next scheduled dose time as a DateTime object
-DateTime? _getNextDoseTime(List<String> doseTimes) {
+  DateTime? _getNextDoseTime(List<String> doseTimes) {
     if (doseTimes.isEmpty) return null;
 
     final now = DateTime.now();
@@ -737,8 +724,7 @@ DateTime? _getNextDoseTime(List<String> doseTimes) {
         final parts = timeStr.split(':');
         final hour = int.parse(parts[0]);
         final minute = int.parse(parts[1]);
-        todayDoses
-            .add(DateTime(now.year, now.month, now.day, hour, minute));
+        todayDoses.add(DateTime(now.year, now.month, now.day, hour, minute));
       } catch (e) {
         print("Error parsing time: $timeStr");
       }
@@ -767,6 +753,7 @@ DateTime? _getNextDoseTime(List<String> doseTimes) {
 
     return null;
   }
+
   /// Formats a duration for the main medicine card (e.g., "Next: 2h 15m")
   String _formatDurationForCard(Duration duration) {
     if (duration.isNegative) {
@@ -913,7 +900,7 @@ DateTime? _getNextDoseTime(List<String> doseTimes) {
       );
 
       print('Add medicine response: ${response.statusCode} ${response.body}');
-     if (response.statusCode == 201) {
+      if (response.statusCode == 201) {
         if (mounted) {
           // 1. Reset the form and clear controllers FIRST (while the dialog still exists)
           _addMedicineFormKey.currentState!.reset();
@@ -932,11 +919,11 @@ DateTime? _getNextDoseTime(List<String> doseTimes) {
           Navigator.of(context).pop();
 
           // +++ ADD THIS SECTION +++
-        // We need the newly created medicine to get its ID
-        final newMedicineData = jsonDecode(response.body)['medicine'];
-        final newMedicine = Medicine.fromJson(newMedicineData);
-        _scheduleAllNotifications(newMedicine); // Schedule notifications
-        // ++++++++++++++++++++++++
+          // We need the newly created medicine to get its ID
+          final newMedicineData = jsonDecode(response.body)['medicine'];
+          final newMedicine = Medicine.fromJson(newMedicineData);
+          _scheduleAllNotifications(newMedicine); // Schedule notifications
+          // ++++++++++++++++++++++++
 
           // 3. Show the "Success" dialog
           await _showEnhancedSuccessDialog(
@@ -948,9 +935,7 @@ DateTime? _getNextDoseTime(List<String> doseTimes) {
             },
           );
         }
-      }
-
-      else if (response.statusCode == 401) {
+      } else if (response.statusCode == 401) {
         await AuthService.logout();
         if (mounted) {
           Navigator.pushReplacement(
@@ -1070,7 +1055,8 @@ DateTime? _getNextDoseTime(List<String> doseTimes) {
         throw Exception('User not logged in');
       }
 
-      final url = Uri.parse('http://10.0.2.2:4000/api/medicine/update-quantity');
+      final url =
+          Uri.parse('http://10.0.2.2:4000/api/medicine/update-quantity');
       final response = await http.put(
         url,
         headers: {
@@ -1083,8 +1069,22 @@ DateTime? _getNextDoseTime(List<String> doseTimes) {
         }),
       );
 
-      print('Update quantity response: ${response.statusCode} ${response.body}');
+      print(
+          'Update quantity response: ${response.statusCode} ${response.body}');
       if (response.statusCode == 200) {
+        // Check for points awarded and show notification
+        final responseData = jsonDecode(response.body);
+        if (responseData['pointsAwarded'] != null) {
+          final points = responseData['pointsAwarded']['points'] as int;
+          final message = responseData['pointsAwarded']['message'] as String;
+          PointsNotification.show(
+            context,
+            points: points,
+            message: message,
+            action: 'medicine_taken',
+          );
+        }
+
         if (mounted) {
           await _showEnhancedSuccessDialog(
             context: context,
@@ -1139,17 +1139,16 @@ DateTime? _getNextDoseTime(List<String> doseTimes) {
     }
   }
 
-Future<void> _deleteMedicine(String medicineId, String tradeName) async {
-
-  // +++ ADD THIS +++
-  // Find the medicine in the list to know its dose count
-  Medicine? medToDelete;
-  try {
-    medToDelete = _userMedicines.firstWhere((med) => med.id == medicineId);
-  } catch (e) {
-    medToDelete = null;
-  }
-  // ++++++++++++++++
+  Future<void> _deleteMedicine(String medicineId, String tradeName) async {
+    // +++ ADD THIS +++
+    // Find the medicine in the list to know its dose count
+    Medicine? medToDelete;
+    try {
+      medToDelete = _userMedicines.firstWhere((med) => med.id == medicineId);
+    } catch (e) {
+      medToDelete = null;
+    }
+    // ++++++++++++++++
     setState(() => _isLoading = true);
     try {
       final token = AuthService.token;
@@ -1171,11 +1170,11 @@ Future<void> _deleteMedicine(String medicineId, String tradeName) async {
       if (response.statusCode == 200) {
         if (mounted) {
           // +++ ADD THIS +++
-        if (medToDelete != null) {
-          await _cancelAllNotificationsForMedicine(
-              medToDelete.id, medToDelete.doseTimes.length);
-        }
-        // ++++++++++++++++
+          if (medToDelete != null) {
+            await _cancelAllNotificationsForMedicine(
+                medToDelete.id, medToDelete.doseTimes.length);
+          }
+          // ++++++++++++++++
           // +++ FIX +++
           // Use the correct, standardized success dialog
           // This dialog doesn't have a race condition.
@@ -1611,8 +1610,7 @@ Future<void> _deleteMedicine(String medicineId, String tradeName) async {
                               const SizedBox(height: 16),
                               ...List.generate(_frequencyCount, (index) {
                                 return Padding(
-                                  padding:
-                                      const EdgeInsets.only(bottom: 8.0),
+                                  padding: const EdgeInsets.only(bottom: 8.0),
                                   child: Material(
                                     color: Colors.grey.shade50,
                                     borderRadius: BorderRadius.circular(12),
@@ -1645,9 +1643,7 @@ Future<void> _deleteMedicine(String medicineId, String tradeName) async {
                                           children: [
                                             Row(
                                               children: [
-                                                Icon(
-                                                    Icons
-                                                        .access_time_filled,
+                                                Icon(Icons.access_time_filled,
                                                     color: Color(0xFF0D1B4C),
                                                     size: 20),
                                                 SizedBox(width: 12),
@@ -1656,8 +1652,7 @@ Future<void> _deleteMedicine(String medicineId, String tradeName) async {
                                                   style: GoogleFonts.mulish(
                                                       fontWeight:
                                                           FontWeight.w600,
-                                                      color:
-                                                          Color(0xFF0D1B4C)),
+                                                      color: Color(0xFF0D1B4C)),
                                                 ),
                                               ],
                                             ),
@@ -1671,8 +1666,7 @@ Future<void> _deleteMedicine(String medicineId, String tradeName) async {
                                                           null
                                                       ? Colors.red.shade400
                                                       : Colors.black87,
-                                                  fontWeight:
-                                                      FontWeight.bold),
+                                                  fontWeight: FontWeight.bold),
                                             ),
                                           ],
                                         ),
@@ -1724,10 +1718,8 @@ Future<void> _deleteMedicine(String medicineId, String tradeName) async {
                             onPressed: () => Navigator.of(context).pop(),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: const Color(0xFF0D1B4C),
-                              side:
-                                  const BorderSide(color: Color(0xFF0D1B4C)),
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 16),
+                              side: const BorderSide(color: Color(0xFF0D1B4C)),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -1763,8 +1755,7 @@ Future<void> _deleteMedicine(String medicineId, String tradeName) async {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF0D1B4C),
                               foregroundColor: Colors.white,
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 16),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -1917,8 +1908,7 @@ Future<void> _deleteMedicine(String medicineId, String tradeName) async {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           elevation: 4,
-                          shadowColor:
-                              const Color(0xFF0D1B4C).withOpacity(0.3),
+                          shadowColor: const Color(0xFF0D1B4C).withOpacity(0.3),
                         ),
                         child: _isLoading
                             ? const SizedBox(
@@ -1947,7 +1937,7 @@ Future<void> _deleteMedicine(String medicineId, String tradeName) async {
     );
   }
 
-/// +++ MODIFIED FUNCTION +++
+  /// +++ MODIFIED FUNCTION +++
   /// Shows the details for a specific medicine using the new widget
   void _showMedicineDetailsDialog(Medicine med) {
     showDialog(
@@ -1965,7 +1955,6 @@ Future<void> _deleteMedicine(String medicineId, String tradeName) async {
       },
     );
   }
-
 
   /// Helper for the details dialog
   Widget _buildInfoRow(IconData icon, String label, String value) {
@@ -2009,7 +1998,6 @@ Future<void> _deleteMedicine(String medicineId, String tradeName) async {
   // |                       BUILD WIDGETS                      |
   // +------------------------------------------------------------+
 
-  
   void _showActionBottomSheet() {
     // ... (This function remains unchanged)
     showModalBottomSheet(
@@ -2070,16 +2058,16 @@ Future<void> _deleteMedicine(String medicineId, String tradeName) async {
                     ),
                     const SizedBox(height: 16),
                     // 🔽 ADD THESE 3 LINES
-                      _buildActionButton(
-                        icon: Icons.auto_awesome, // AI icon
-                        text: 'Ask Aura AI',
-                        onTap: () {
-                          Navigator.of(context).pop(); // Close bottom sheet
-                          _showGeminiAIDialog(); // Open new AI dialog
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      // 🔼
+                    _buildActionButton(
+                      icon: Icons.auto_awesome, // AI icon
+                      text: 'Ask Aura AI',
+                      onTap: () {
+                        Navigator.of(context).pop(); // Close bottom sheet
+                        _showGeminiAIDialog(); // Open new AI dialog
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    // 🔼
                     _buildActionButton(
                       icon: Icons.mediation_outlined,
                       text: 'Check Interaction',
@@ -2121,9 +2109,8 @@ Future<void> _deleteMedicine(String medicineId, String tradeName) async {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
           decoration: BoxDecoration(
-            color: isCancel
-                ? Colors.transparent
-                : Colors.white.withOpacity(0.1),
+            color:
+                isCancel ? Colors.transparent : Colors.white.withOpacity(0.1),
             borderRadius: BorderRadius.circular(16),
             border: isCancel
                 ? Border.all(color: Colors.white.withOpacity(0.3))
@@ -2180,9 +2167,7 @@ Future<void> _deleteMedicine(String medicineId, String tradeName) async {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: isToday
-                      ? const Color(0xFF0D1B4C)
-                      : Colors.transparent,
+                  color: isToday ? const Color(0xFF0D1B4C) : Colors.transparent,
                   shape: BoxShape.circle,
                 ),
                 child: Center(
@@ -2191,9 +2176,7 @@ Future<void> _deleteMedicine(String medicineId, String tradeName) async {
                     style: GoogleFonts.mulish(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: isToday
-                          ? Colors.white
-                          : Colors.grey.shade600,
+                      color: isToday ? Colors.white : Colors.grey.shade600,
                     ),
                   ),
                 ),
@@ -2396,8 +2379,7 @@ Future<void> _deleteMedicine(String medicineId, String tradeName) async {
                   alignment: Alignment.centerRight,
                   child: ElevatedButton.icon(
                     onPressed: _isLoading ? null : () => _takeDose(med),
-                    icon:
-                        const Icon(Icons.check_circle_outline, size: 20),
+                    icon: const Icon(Icons.check_circle_outline, size: 20),
                     label: Text(
                       'Take Dose',
                       style: GoogleFonts.mulish(
@@ -2415,8 +2397,7 @@ Future<void> _deleteMedicine(String medicineId, String tradeName) async {
                         vertical: 12,
                       ),
                       elevation: 2,
-                      shadowColor:
-                          const Color(0xFF0D1B4C).withOpacity(0.3),
+                      shadowColor: const Color(0xFF0D1B4C).withOpacity(0.3),
                     ),
                   ),
                 ),
@@ -2566,16 +2547,15 @@ Future<void> _deleteMedicine(String medicineId, String tradeName) async {
                 ),
                 const SizedBox(height: 80),
                 ElevatedButton(
-  onPressed: _showTestNotification,
-  child: Text('Test Immediate Notification'),
-),                const SizedBox(height: 20),
+                  onPressed: _showTestNotification,
+                  child: Text('Test Immediate Notification'),
+                ),
+                const SizedBox(height: 20),
               ],
             ),
           ),
         ],
       ),
-
-      
       floatingActionButton: Container(
         margin: const EdgeInsets.only(bottom: 80),
         child: FloatingActionButton(
@@ -2593,105 +2573,55 @@ Future<void> _deleteMedicine(String medicineId, String tradeName) async {
     );
   }
 }
+
 Widget buildEnhancedInputField({
+  // ... (This function remains unchanged)
 
-    // ... (This function remains unchanged)
-
-    required TextEditingController controller,
-
-    required String label,
-
-    TextInputType? keyboardType,
-
-    String? Function(String?)? validator,
-
-    void Function(String)? onChanged,
-
-  }) {
-
-    return TextFormField(
-
-      controller: controller,
-
-      keyboardType: keyboardType,
-
-      validator: validator,
-
-      onChanged: onChanged,
-
-      style: GoogleFonts.mulish(
-
-        color: const Color(0xFF0D1B4C),
-
+  required TextEditingController controller,
+  required String label,
+  TextInputType? keyboardType,
+  String? Function(String?)? validator,
+  void Function(String)? onChanged,
+}) {
+  return TextFormField(
+    controller: controller,
+    keyboardType: keyboardType,
+    validator: validator,
+    onChanged: onChanged,
+    style: GoogleFonts.mulish(
+      color: const Color(0xFF0D1B4C),
+      fontWeight: FontWeight.w500,
+    ),
+    decoration: InputDecoration(
+      labelText: label,
+      labelStyle: GoogleFonts.mulish(
+        color: Colors.grey.shade600,
         fontWeight: FontWeight.w500,
-
       ),
-
-      decoration: InputDecoration(
-
-        labelText: label,
-
-        labelStyle: GoogleFonts.mulish(
-
-          color: Colors.grey.shade600,
-
-          fontWeight: FontWeight.w500,
-
-        ),
-
-        filled: true,
-
-        fillColor: Colors.grey.shade50,
-
-        contentPadding:
-
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-
-        enabledBorder: OutlineInputBorder(
-
-          borderRadius: BorderRadius.circular(12),
-
-          borderSide: BorderSide(color: Colors.grey.shade300, width: 1.5),
-
-        ),
-
-        focusedBorder: OutlineInputBorder(
-
-          borderRadius: BorderRadius.circular(12),
-
-          borderSide: const BorderSide(color: Color(0xFF0D1B4C), width: 2),
-
-        ),
-
-        errorBorder: OutlineInputBorder(
-
-          borderRadius: BorderRadius.circular(12),
-
-          borderSide: BorderSide(color: Colors.red.shade400, width: 1.5),
-
-        ),
-
-        focusedErrorBorder: OutlineInputBorder(
-
-          borderRadius: BorderRadius.circular(12),
-
-          borderSide: BorderSide(color: Colors.red.shade400, width: 2),
-
-        ),
-
-        errorStyle: GoogleFonts.mulish(
-
-          color: Colors.red.shade400,
-
-          fontSize: 12,
-
-          fontWeight: FontWeight.w500,
-
-        ),
-
+      filled: true,
+      fillColor: Colors.grey.shade50,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.shade300, width: 1.5),
       ),
-
-    );
-
-  }
-
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFF0D1B4C), width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.red.shade400, width: 1.5),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.red.shade400, width: 2),
+      ),
+      errorStyle: GoogleFonts.mulish(
+        color: Colors.red.shade400,
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+      ),
+    ),
+  );
+}

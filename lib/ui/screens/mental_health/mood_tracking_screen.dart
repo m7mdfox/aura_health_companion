@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:aura_health_companion/data/auth_service.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:aura_health_companion/ui/widgets/points_notification.dart';
 
 class MoodTrackingScreen extends StatefulWidget {
   const MoodTrackingScreen({super.key});
@@ -35,8 +36,8 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen> {
     final savedMood = prefs.getString('today_mood');
     final savedUserId = prefs.getString('last_mood_user_id');
 
-    final currentUserId = AuthService.profile?['auth_id'] ??
-        AuthService.profile?['user_id'];
+    final currentUserId =
+        AuthService.profile?['auth_id'] ?? AuthService.profile?['user_id'];
 
     if (savedDate != today || savedUserId != currentUserId) {
       await prefs.remove('last_mood_date');
@@ -110,7 +111,8 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F1120) : const Color(0xFFF5F7FA),
+      backgroundColor:
+          isDark ? const Color(0xFF0F1120) : const Color(0xFFF5F7FA),
       appBar: _buildAppBar(isDark),
       body: SafeArea(
         child: Stack(
@@ -127,7 +129,8 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen> {
                         style: _poppins.copyWith(
                           fontSize: 26,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : const Color(0xFF1E293B),
+                          color:
+                              isDark ? Colors.white : const Color(0xFF1E293B),
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -136,7 +139,8 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen> {
                         today,
                         style: _poppins.copyWith(
                           fontSize: 15,
-                          color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                          color:
+                              isDark ? Colors.white60 : const Color(0xFF64748B),
                           fontStyle: FontStyle.italic,
                         ),
                         textAlign: TextAlign.center,
@@ -191,7 +195,8 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen> {
                                   child: Row(
                                     children: [
                                       Icon(Ionicons.pencil,
-                                          size: 14, color: Colors.blue.shade700),
+                                          size: 14,
+                                          color: Colors.blue.shade700),
                                       const SizedBox(width: 4),
                                       Text(
                                         'Edit',
@@ -264,8 +269,7 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         const CircularProgressIndicator(
-                          valueColor:
-                              AlwaysStoppedAnimation(Color(0xFF10B981)),
+                          valueColor: AlwaysStoppedAnimation(Color(0xFF10B981)),
                         ),
                         const SizedBox(height: 16),
                         Text(
@@ -273,7 +277,8 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen> {
                           style: _poppins.copyWith(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.white : const Color(0xFF1E293B),
+                            color:
+                                isDark ? Colors.white : const Color(0xFF1E293B),
                           ),
                         ),
                       ],
@@ -317,16 +322,15 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen> {
         child: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: isDark 
-              ? const Color(0xFF0F1120).withOpacity(0.7)
-              : Colors.white.withOpacity(0.7),
+            color: isDark
+                ? const Color(0xFF0F1120).withOpacity(0.7)
+                : Colors.white.withOpacity(0.7),
             shape: BoxShape.circle,
             border: Border.all(
-              color: isDark 
-                ? Colors.white.withOpacity(0.1)
-                : Colors.white.withOpacity(0.5), 
-              width: 1.5
-            ),
+                color: isDark
+                    ? Colors.white.withOpacity(0.1)
+                    : Colors.white.withOpacity(0.5),
+                width: 1.5),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
@@ -335,11 +339,9 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen> {
               ),
             ],
           ),
-          child: Icon(
-            Ionicons.arrow_back,
-            color: isDark ? Colors.white70 : const Color(0xFF475569), 
-            size: 22
-          ),
+          child: Icon(Ionicons.arrow_back,
+              color: isDark ? Colors.white70 : const Color(0xFF475569),
+              size: 22),
         ),
       ),
     );
@@ -371,16 +373,16 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen> {
             border: Border.all(
               color: isSelected
                   ? baseColor.withOpacity(0.9)
-                  : (isDark 
-                    ? Colors.white.withOpacity(0.1)
-                    : baseColor.withOpacity(0.2)),
+                  : (isDark
+                      ? Colors.white.withOpacity(0.1)
+                      : baseColor.withOpacity(0.2)),
               width: isSelected ? 2.5 : 1.2,
             ),
             boxShadow: [
               BoxShadow(
-                color: isDark 
-                  ? Colors.black.withOpacity(0.3)
-                  : Colors.black.withOpacity(0.05),
+                color: isDark
+                    ? Colors.black.withOpacity(0.3)
+                    : Colors.black.withOpacity(0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 5),
               ),
@@ -458,8 +460,8 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen> {
     setState(() => _isLoading = true);
 
     final url = Uri.parse('http://10.0.2.2:4000/api/moods');
-    final userId = AuthService.profile?['auth_id'] ??
-        AuthService.profile?['user_id'];
+    final userId =
+        AuthService.profile?['auth_id'] ?? AuthService.profile?['user_id'];
 
     if (userId == null) {
       if (!mounted) return;
@@ -474,16 +476,18 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen> {
     }
 
     try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'auth_id': userId,
-          'mood_type': label.toLowerCase(),
-          'note': emoji,
-          'date': today,
-        }),
-      ).timeout(const Duration(seconds: 8));
+      final response = await http
+          .post(
+            url,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'auth_id': userId,
+              'mood_type': label.toLowerCase(),
+              'note': emoji,
+              'date': today,
+            }),
+          )
+          .timeout(const Duration(seconds: 8));
 
       if (!mounted) return;
 
@@ -499,6 +503,22 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen> {
         });
 
         final actionText = isEdit ? 'updated' : 'logged';
+
+        // Check for points awarded and show notification
+        final responseData = jsonDecode(response.body);
+        print('🎯 Mood response: ${response.body}');
+        if (responseData['pointsAwarded'] != null) {
+          final points = responseData['pointsAwarded']['points'] as int;
+          final message = responseData['pointsAwarded']['message'] as String;
+          print('🎯 Showing points notification: $points points');
+          PointsNotification.show(
+            context,
+            points: points,
+            message: message,
+            action: 'mood_log',
+          );
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
@@ -561,11 +581,27 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen> {
 
   String _formatDate(DateTime date) {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
     ];
     const weekdays = [
-      'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday'
     ];
     return '${weekdays[date.weekday - 1]}, ${date.day} ${months[date.month - 1]}';
   }

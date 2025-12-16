@@ -7,8 +7,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
-
-
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -180,8 +178,8 @@ class _SplashScreenState extends State<SplashScreen>
                       );
                     },
                     child: Container(
-                      width: 250,
-                      height: 250,
+                      width: 450,
+                      height: 450,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                       ),
@@ -350,4 +348,3 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 }
-

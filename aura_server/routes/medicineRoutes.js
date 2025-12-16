@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import fs from "fs";
 import path from "path";
+import pointsService from "../services/pointsService.js";
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret";
@@ -267,6 +268,27 @@ router.put("/update-quantity", authMiddleware, async (req, res) => {
       `Quantity updated for medicine ${medicineId} to ${quantity}, dose time logged`
     );
 
+    // Award points for taking medicine on time
+    let pointsAwarded = null;
+    try {
+      console.log(`🎯 Attempting to award medicine points to: ${req.user.auth_id}`);
+      const result = await pointsService.awardMedicineTaken(
+        req.user.auth_id,
+        medicine.trade_name,
+        medicineId
+      );
+      console.log(`✅ Medicine points awarded successfully:`, result);
+      pointsAwarded = {
+        points: result.transaction.points,
+        action: 'medicine_taken',
+        message: `+${result.transaction.points} points for taking ${medicine.trade_name} on time! 💊`,
+        newTotal: result.newTotal
+      };
+      console.log(`🎯 Points awarded for taking medicine: ${medicine.trade_name}, total: ${result.newTotal}`);
+    } catch (pointsErr) {
+      console.error("❌ Failed to award points for medicine:", pointsErr);
+    }
+
     res.status(200).json({
       message: "Quantity updated successfully",
       medicine: {
@@ -278,8 +300,9 @@ router.put("/update-quantity", authMiddleware, async (req, res) => {
         duration_days: medicine.duration_days,
         quantity: medicine.quantity,
         active_ingredient: medicine.active_ingredient,
-        dose_times: medicine.dose_times, // +++ ADDED +++
+        dose_times: medicine.dose_times,
       },
+      pointsAwarded,
     });
   } catch (e) {
     console.error("Update quantity error:", e);

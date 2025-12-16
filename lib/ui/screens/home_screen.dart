@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:aura_health_companion/data/auth_service.dart';
 import 'package:aura_health_companion/data/vital_simulator.dart';
 import 'package:aura_health_companion/ui/screens/chatbot/chatbot_screen.dart';
@@ -6,10 +7,12 @@ import 'package:aura_health_companion/ui/screens/profile/profile_screen.dart';
 import 'package:aura_health_companion/ui/screens/services_screen.dart';
 import 'package:aura_health_companion/ui/widgets/navigation_bar.dart';
 import 'package:aura_health_companion/ui/widgets/soon_animation.dart';
+import 'package:aura_health_companion/ui/widgets/points_notification.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:http/http.dart' as http;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -32,6 +35,9 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
 
+    // Check for daily login bonus
+    _checkDailyLoginBonus();
+
     _refreshTimer = Timer.periodic(const Duration(seconds: 60), (_) {
       if (mounted) setState(() {});
     });
@@ -40,6 +46,48 @@ class _HomeScreenState extends State<HomeScreen> {
     _vitalSimulator.simulateVitals().listen((vitals) {
       _checkVitals(vitals);
     });
+  }
+
+  /// Check and award daily login bonus points
+  Future<void> _checkDailyLoginBonus() async {
+    try {
+      final authId = AuthService.profile?['auth_id'];
+      if (authId == null) return;
+
+      final url = Uri.parse('${AuthService.baseUrl}/api/points/daily-login');
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'auth_id': authId}),
+      );
+
+      print('🎯 Daily login response: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['data']?['transaction'] != null) {
+          final points = data['data']['transaction']['points'] ?? 5;
+          final newTotal = data['data']['newTotal'] ?? 0;
+
+          // Show notification after a short delay to ensure context is ready
+          await Future.delayed(const Duration(milliseconds: 500));
+          if (mounted) {
+            PointsNotification.show(
+              context,
+              points: points,
+              message: 'Welcome back! Daily login bonus 🌟',
+              action: 'daily_login',
+            );
+            print(
+                '✅ Daily login bonus awarded: $points points, total: $newTotal');
+          }
+        } else {
+          print('📋 Daily login already claimed today');
+        }
+      }
+    } catch (e) {
+      print('❌ Error checking daily login bonus: $e');
+    }
   }
 
   void _checkVitals(Map<String, dynamic> vitals) async {
@@ -232,9 +280,9 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: isDark 
-              ? Colors.black.withOpacity(0.3)
-              : Colors.black.withOpacity(0.1),
+            color: isDark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.black.withOpacity(0.1),
             offset: const Offset(3, 4),
             blurRadius: 6,
             spreadRadius: 1,
@@ -309,9 +357,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildHomeScreen(String userName) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F1120) : const Color(0xFFF5F7FA),
+      backgroundColor:
+          isDark ? const Color(0xFF0F1120) : const Color(0xFFF5F7FA),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -322,16 +371,18 @@ class _HomeScreenState extends State<HomeScreen> {
               width: double.infinity,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: isDark 
-                    ? [const Color(0xFF1A1D2E), const Color(0xFF2D1B69)]
-                    : [const Color(0xFF00177E), const Color(0xFF1B1E36)],
+                  colors: isDark
+                      ? [const Color(0xFF1A1D2E), const Color(0xFF2D1B69)]
+                      : [const Color(0xFF00177E), const Color(0xFF1B1E36)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: (isDark ? const Color(0xFF2D1B69) : const Color(0xFF00177E))
+                    color: (isDark
+                            ? const Color(0xFF2D1B69)
+                            : const Color(0xFF00177E))
                         .withOpacity(0.3),
                     blurRadius: 15,
                     offset: const Offset(0, 8),
@@ -391,15 +442,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                   Positioned(
-                    right: -20,
-                    top: 0,
-                    bottom: 0,
+                    right: -80,
+                    top: -50,
+                    bottom: -40,
                     child: Opacity(
                       opacity: 0.2,
                       child: Image.asset(
                         'assets/animations/logo.png',
-                        height: 170,
-                        width: 170,
+                        height: 300,
+                        width: 300,
                         fit: BoxFit.contain,
                       ),
                     ),
@@ -438,14 +489,18 @@ class _HomeScreenState extends State<HomeScreen> {
                     margin: const EdgeInsets.only(right: 10),
                     decoration: BoxDecoration(
                       color: isActive
-                          ? (isDark ? const Color(0xFF2D1B69) : const Color(0xFFE0E7FF))
-                          : (isDark ? const Color(0xFF1A1D2E) : const Color(0xFFF5F5F5)),
+                          ? (isDark
+                              ? const Color(0xFF2D1B69)
+                              : const Color(0xFFE0E7FF))
+                          : (isDark
+                              ? const Color(0xFF1A1D2E)
+                              : const Color(0xFFF5F5F5)),
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: isDark 
-                            ? Colors.black.withOpacity(0.3)
-                            : Colors.black.withOpacity(0.2),
+                          color: isDark
+                              ? Colors.black.withOpacity(0.3)
+                              : Colors.black.withOpacity(0.2),
                           offset: const Offset(2, 3),
                           blurRadius: 6,
                           spreadRadius: 1,
@@ -459,11 +514,14 @@ class _HomeScreenState extends State<HomeScreen> {
                           days[index]['day']!,
                           style: TextStyle(
                             color: isActive
-                                ? (isDark ? Colors.white : const Color(0xFF3B82F6))
-                                : (isDark ? Colors.white54 : const Color(0xFF666666)),
-                            fontWeight: isActive
-                                ? FontWeight.bold
-                                : FontWeight.normal,
+                                ? (isDark
+                                    ? Colors.white
+                                    : const Color(0xFF3B82F6))
+                                : (isDark
+                                    ? Colors.white54
+                                    : const Color(0xFF666666)),
+                            fontWeight:
+                                isActive ? FontWeight.bold : FontWeight.normal,
                             fontSize: 14,
                           ),
                         ),
@@ -472,11 +530,14 @@ class _HomeScreenState extends State<HomeScreen> {
                           days[index]['date']!,
                           style: TextStyle(
                             color: isActive
-                                ? (isDark ? Colors.white : const Color(0xFF3B82F6))
-                                : (isDark ? Colors.white54 : const Color(0xFF666666)),
-                            fontWeight: isActive
-                                ? FontWeight.bold
-                                : FontWeight.normal,
+                                ? (isDark
+                                    ? Colors.white
+                                    : const Color(0xFF3B82F6))
+                                : (isDark
+                                    ? Colors.white54
+                                    : const Color(0xFF666666)),
+                            fontWeight:
+                                isActive ? FontWeight.bold : FontWeight.normal,
                             fontSize: 14,
                           ),
                         ),
