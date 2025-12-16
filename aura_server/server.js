@@ -275,12 +275,24 @@ io.on("connection", (socket) => {
   // Join Room
   socket.on("join_room", (room) => {
     socket.join(room);
+    const roomMembers = io.sockets.adapter.rooms.get(room);
     console.log(`User ${socket.id} joined room: ${room}`);
+    console.log(`Room ${room} now has ${roomMembers ? roomMembers.size : 0} members`);
   });
 
   // Send Message (AND SAVE TO DB)
   socket.on("send_message", async (data) => {
-    console.log("Message received:", data);
+    console.log("\n📩 Message received from:", socket.id);
+    console.log("📦 Data:", JSON.stringify(data));
+
+    // Debug: Check room membership
+    const room = data.room;
+    const roomMembers = io.sockets.adapter.rooms.get(room);
+    console.log(`📍 Broadcasting to room: ${room}`);
+    console.log(`👥 Room members: ${roomMembers ? roomMembers.size : 0}`);
+    if (roomMembers) {
+      console.log(`👥 Member IDs: ${[...roomMembers].join(', ')}`);
+    }
 
     try {
       // 1. Create a new Message document
@@ -295,13 +307,14 @@ io.on("connection", (socket) => {
 
       // 2. Save to MongoDB
       await newMessage.save();
-      console.log("Message saved to DB");
+      console.log("✅ Message saved to DB");
 
       // 3. Broadcast to others in the room
       socket.to(data.room).emit("receive_message", data);
+      console.log("📤 Broadcast sent to room:", data.room);
 
     } catch (err) {
-      console.error("Error saving message to DB:", err);
+      console.error("❌ Error saving message to DB:", err);
     }
   });
 

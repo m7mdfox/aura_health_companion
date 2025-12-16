@@ -6,20 +6,21 @@ class ChatService {
   late IO.Socket socket;
   final Dio _dio = Dio();
   // Replace with your IP
-  final String _serverUrl = 'http://10.0.2.2:4000'; 
+  final String _serverUrl = 'http://10.0.2.2:4000';
 
   static final ChatService _instance = ChatService._internal();
   factory ChatService() => _instance;
   ChatService._internal();
 
   void connect(String roomId) {
+    print('🔗 ChatService connecting to room: $roomId'); // Debug
     socket = IO.io(_serverUrl, <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': false,
     });
     socket.connect();
     socket.onConnect((_) {
-      print('Connected');
+      print('✅ Socket Connected, joining room: $roomId');
       socket.emit('join_room', roomId);
     });
   }
@@ -65,7 +66,8 @@ class ChatService {
       FormData formData = FormData.fromMap({
         "file": await MultipartFile.fromFile(file.path, filename: fileName),
       });
-      Response response = await _dio.post("$_serverUrl/api/upload", data: formData);
+      Response response =
+          await _dio.post("$_serverUrl/api/upload", data: formData);
       return response.data['url'];
     } catch (e) {
       return null;

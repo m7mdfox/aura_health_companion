@@ -7,39 +7,40 @@ const router = express.Router();
 
 // In Node.js doctorController.js
 // ✅ GET DOCTOR APPOINTMENTS (SAFE MODE - NO SKIPPING)
+// ✅ GET DOCTOR APPOINTMENTS (FIXED - Preserves raw ID when populate fails)
 router.get("/doctor/:doctorId", async (req, res) => {
   try {
     console.log(`\n--- Fetching for Doctor: ${req.params.doctorId} ---`);
 
+    // Step 1: Get raw appointments first (without populate) to preserve ObjectIds
     const rawAppts = await Appointment.find({ doctor_id: req.params.doctorId })
-      .populate("patient_id", "full_name email")
-      .sort({ appointment_date: -1 });
+      .sort({ appointment_date: -1 })
+      .lean(); // Use lean() for plain JS objects
 
+    // Step 2: Get all unique patient IDs
+    const patientIds = [...new Set(rawAppts.map(a => a.patient_id?.toString()).filter(Boolean))];
+    
+    // Step 3: Fetch all existing profiles in one query
+    const Profile = mongoose.model("Profile");
+    const profiles = await Profile.find({ _id: { $in: patientIds } }).lean();
+    
+    // Step 4: Create a lookup map
+    const profileMap = {};
+    profiles.forEach(p => {
+      profileMap[p._id.toString()] = p;
+    });
+
+    // Step 5: Build the response with preserved IDs
     const cleanList = rawAppts.map(appt => {
-      // --- LOGIC TO HANDLE BROKEN IDs ---
-      let pId = "Unknown_ID";
-      let pName = "Unknown Patient";
-      let pEmail = "N/A";
-
-      // Case 1: Populate worked (Perfect)
-      if (appt.patient_id && appt.patient_id.full_name) {
-        pId = appt.patient_id._id;
-        pName = appt.patient_id.full_name;
-        pEmail = appt.patient_id.email;
-      }
-      // Case 2: Populate failed (The "Zombie" case)
-      else {
-        console.log(`⚠️ Keeping broken appointment ${appt._id} visible.`);
-        // Try to recover the raw ID if it exists, otherwise keep "Unknown_ID"
-        if (appt.patient_id) pId = appt.patient_id.toString();
-      }
+      const rawPatientId = appt.patient_id?.toString() || "Unknown_ID";
+      const profile = profileMap[rawPatientId];
 
       return {
-        _id: appt._id,
-        doctor_id: appt.doctor_id,
-        patient_id: pId.toString(),
-        patient_name: pName,
-        patient_email: pEmail,
+        _id: appt._id.toString(),
+        doctor_id: appt.doctor_id.toString(),
+        patient_id: rawPatientId,  // ✅ Always preserve the raw ID
+        patient_name: profile?.full_name || "Unknown Patient",
+        patient_email: profile?.email || "N/A",
         appointment_date: appt.appointment_date,
         start_time: appt.start_time,
         end_time: appt.end_time,
@@ -49,7 +50,7 @@ router.get("/doctor/:doctorId", async (req, res) => {
       };
     });
 
-    // Send the list (Do NOT filter anything out)
+    console.log(`✅ Returning ${cleanList.length} appointments`);
     res.json(cleanList);
 
   } catch (err) {

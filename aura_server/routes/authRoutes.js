@@ -121,6 +121,7 @@ router.post("/verify-otp", async (req, res) => {
     res.status(201).json({
       token,
       profile: {
+        _id: profile._id, // MongoDB document ID - used for appointments
         auth_id,
         full_name,
         email,
@@ -170,6 +171,7 @@ router.post("/login", async (req, res) => {
     res.json({
       token,
       profile: {
+        _id: profile._id, // MongoDB document ID - used for appointments
         auth_id: profile.auth_id,
         full_name: profile.full_name,
         email,
