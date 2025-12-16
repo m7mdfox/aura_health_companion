@@ -14,6 +14,7 @@ import 'package:aura_health_companion/ui/screens/profile/pages/medical_history_p
 import 'package:aura_health_companion/ui/screens/profile/pages/settings_page.dart';
 import 'package:aura_health_companion/ui/screens/profile/pages/about_page.dart';
 import 'package:aura_health_companion/ui/screens/profile/pages/help_support_page.dart';
+import 'package:aura_health_companion/ui/screens/profile/pages/health_points_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -42,7 +43,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       print('🔄 Loading profile from backend...');
       final profile = await ProfileService.getProfile();
-      
+
       print('✅ Profile loaded successfully: ${profile.name}');
       if (mounted) {
         setState(() {
@@ -52,13 +53,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     } catch (e) {
       print('❌ Error loading profile from backend: $e');
-      
+
       try {
         if (AuthService.profile != null) {
           print('🔄 Trying fallback to local profile...');
           final profile = UserProfileModel.fromJson(AuthService.profile!);
           print('✅ Local profile loaded: ${profile.name}');
-          
+
           if (mounted) {
             setState(() {
               userProfile = profile;
@@ -70,7 +71,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           print('❌ No local profile available');
           if (mounted) {
             setState(() {
-              errorMessage = 'No profile data available. Please try logging in again.';
+              errorMessage =
+                  'No profile data available. Please try logging in again.';
               isLoading = false;
             });
           }
@@ -79,7 +81,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         print('❌ Error parsing local profile: $parseError');
         if (mounted) {
           setState(() {
-            errorMessage = 'Failed to load profile. Please try logging in again.';
+            errorMessage =
+                'Failed to load profile. Please try logging in again.';
             isLoading = false;
           });
         }
@@ -90,10 +93,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     if (isLoading) {
       return Scaffold(
-        backgroundColor: isDark ? const Color(0xFF0F1120) : const Color(0xFFF5F7FA),
+        backgroundColor:
+            isDark ? const Color(0xFF0F1120) : const Color(0xFFF5F7FA),
         body: const Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -109,7 +113,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (errorMessage != null || userProfile == null) {
       return Scaffold(
-        backgroundColor: isDark ? const Color(0xFF0F1120) : const Color(0xFFF5F7FA),
+        backgroundColor:
+            isDark ? const Color(0xFF0F1120) : const Color(0xFFF5F7FA),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
@@ -170,7 +175,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F1120) : const Color(0xFFF5F7FA),
+      backgroundColor:
+          isDark ? const Color(0xFF0F1120) : const Color(0xFFF5F7FA),
       body: RefreshIndicator(
         onRefresh: _loadUserProfile,
         child: SingleChildScrollView(
@@ -178,13 +184,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             children: [
               _buildProfileHeader(userProfile!),
-              
               ProfileStatsCard(
                 streakDays: userProfile!.streakDays,
                 totalPoints: userProfile!.totalPoints,
                 completedChallenges: userProfile!.completedChallenges,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const HealthPointsScreen(),
+                    ),
+                  );
+                },
               ),
-              
               HealthInsightsCard(
                 weight: userProfile!.weight,
                 height: userProfile!.height,
@@ -192,11 +204,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 bmiCategory: userProfile!.bmiCategory,
                 bloodType: userProfile!.bloodType,
               ),
-              
               const SizedBox(height: 20),
-              
               _buildMenuSection(context),
-              
               const SizedBox(height: 20),
             ],
           ),
@@ -207,12 +216,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildProfileHeader(UserProfileModel profile) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     String? avatarUrl;
-    if (profile.avatarUrl != null && 
-        profile.avatarUrl!.isNotEmpty && 
+    if (profile.avatarUrl != null &&
+        profile.avatarUrl!.isNotEmpty &&
         profile.avatarUrl != '') {
-      if (profile.avatarUrl!.startsWith('http://') || 
+      if (profile.avatarUrl!.startsWith('http://') ||
           profile.avatarUrl!.startsWith('https://')) {
         avatarUrl = profile.avatarUrl;
       } else {
@@ -224,9 +233,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       width: double.infinity,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: isDark 
-            ? [const Color(0xFF1A1D2E), const Color(0xFF0F1120)]
-            : [const Color(0xFF00177E), const Color(0xFF0F1120)],
+          colors: isDark
+              ? [const Color(0xFF1A1D2E), const Color(0xFF0F1120)]
+              : [const Color(0xFF00177E), const Color(0xFF0F1120)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -246,25 +255,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       radius: 57,
                       backgroundColor: const Color(0xFF00177E).withOpacity(0.2),
                       backgroundImage: avatarUrl != null
-                        ? NetworkImage(avatarUrl) as ImageProvider
-                        : null,
+                          ? NetworkImage(avatarUrl) as ImageProvider
+                          : null,
                       onBackgroundImageError: avatarUrl != null
-                        ? (exception, stackTrace) {
-                            print('❌ Failed to load avatar: $exception');
-                          }
-                        : null,
+                          ? (exception, stackTrace) {
+                              print('❌ Failed to load avatar: $exception');
+                            }
+                          : null,
                       child: avatarUrl == null
-                        ? Text(
-                            profile.name.isNotEmpty 
-                              ? profile.name[0].toUpperCase() 
-                              : 'U',
-                            style: const TextStyle(
-                              fontSize: 40,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF00177E),
-                            ),
-                          )
-                        : null,
+                          ? Text(
+                              profile.name.isNotEmpty
+                                  ? profile.name[0].toUpperCase()
+                                  : 'U',
+                              style: const TextStyle(
+                                fontSize: 40,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF00177E),
+                              ),
+                            )
+                          : null,
                     ),
                   ),
                   Positioned(
@@ -321,7 +330,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildMenuSection(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
@@ -352,7 +361,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             iconColor: const Color(0xFFE91E63),
             onTap: _navigateToMedicalHistory,
           ),
-          
           _buildSectionTitle('Preferences'),
           ProfileMenuItem(
             icon: Icons.watch,
@@ -368,7 +376,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             iconColor: const Color(0xFF9C27B0),
             onTap: _navigateToSettings,
           ),
-          
           _buildSectionTitle('Support'),
           ProfileMenuItem(
             icon: Icons.help_center,
@@ -399,7 +406,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildSectionTitle(String title) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Align(
@@ -419,19 +426,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _navigateToEditProfile() async {
     if (userProfile == null) return;
-    
+
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => EditProfilePage(userProfile: userProfile!),
       ),
     );
-    
+
     if (result != null && result is UserProfileModel) {
       setState(() {
         userProfile = result;
       });
-      
+
       await AuthService.updateProfileInSession(result.toJson());
     }
   }
@@ -495,14 +502,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              
+
               try {
                 await AuthService.logout();
-                
+
                 if (mounted) {
-                  final authController = Provider.of<AuthController>(context, listen: false);
+                  final authController =
+                      Provider.of<AuthController>(context, listen: false);
                   authController.notifyAuthChange();
-                  
+
                   Navigator.of(context).pushAndRemoveUntil(
                     MaterialPageRoute(
                       builder: (context) => const LoginScreen(),
