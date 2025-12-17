@@ -6,6 +6,7 @@ import 'package:aura_health_companion/ui/screens/health_journey_game/game_screen
 import 'package:aura_health_companion/ui/screens/fitness_coach/fitness_coach_main.dart';
 import 'package:aura_health_companion/ui/screens/nutrition/nutrition_main_entry.dart';
 import 'package:aura_health_companion/ui/screens/challenges/challenges_screen.dart';
+import 'package:aura_health_companion/ui/screens/chatbot video/video_call_screen.dart';
 
 class ServicesScreen extends StatelessWidget {
   const ServicesScreen({super.key});
@@ -89,6 +90,12 @@ class ServicesScreen extends StatelessWidget {
       "route": "/order_medicine",
       "color": Colors.deepOrange
     },
+    {
+      "title": "AI Chatbot",
+      "icon": Icons.video_chat,
+      "route": "/chatbot_video",
+      "color": Colors.indigoAccent
+    },
   ];
 
   void _navigateToService(BuildContext context, String route) {
@@ -124,6 +131,11 @@ class ServicesScreen extends StatelessWidget {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const ChallengesScreen()),
+      );
+    } else if (route == '/chatbot_video') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const VideoCallScreen()),
       );
     } else {
       // الروابط الأخرى التي قد تكون مسجلة في main.dart
