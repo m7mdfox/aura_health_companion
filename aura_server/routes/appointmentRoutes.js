@@ -19,11 +19,11 @@ router.get("/doctor/:doctorId", async (req, res) => {
 
     // Step 2: Get all unique patient IDs
     const patientIds = [...new Set(rawAppts.map(a => a.patient_id?.toString()).filter(Boolean))];
-    
+
     // Step 3: Fetch all existing profiles in one query
     const Profile = mongoose.model("Profile");
     const profiles = await Profile.find({ _id: { $in: patientIds } }).lean();
-    
+
     // Step 4: Create a lookup map
     const profileMap = {};
     profiles.forEach(p => {
@@ -92,10 +92,30 @@ router.put("/:id/status", async (req, res) => {
   }
 });
 
-// ✅ CREATE REQUEST
+// ✅ CREATE REQUEST (with duplicate check)
 router.post("/request", async (req, res) => {
   try {
     const { doctor_id, patient_id, appointment_date, start_time, end_time, type, notes } = req.body;
+
+    // +++ DUPLICATE CHECK +++
+    // Check if patient already has a pending/confirmed appointment with this doctor
+    const existingAppointment = await Appointment.findOne({
+      doctor_id,
+      patient_id,
+      status: { $in: ['requested', 'confirmed'] } // Active appointments
+    });
+
+    if (existingAppointment) {
+      return res.status(400).json({
+        error: "You already have an active appointment with this doctor. Please complete or cancel it first.",
+        existingAppointment: {
+          id: existingAppointment._id,
+          status: existingAppointment.status,
+          date: existingAppointment.appointment_date
+        }
+      });
+    }
+    // +++ END DUPLICATE CHECK +++
 
     const appt = new Appointment({
       doctor_id,

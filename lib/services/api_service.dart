@@ -26,6 +26,23 @@ class ApiService {
     }
   }
 
+  // Get unique specialties for filters
+  static Future<List<String>> getSpecialties() async {
+    final url = Uri.parse('$baseUrl/api/doctors/specialties/list');
+
+    print("Flutter Request: $url");
+
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final List<dynamic> body = jsonDecode(response.body);
+      return body.map((s) => s.toString()).toList();
+    } else {
+      print("Server Error: ${response.statusCode} - ${response.body}");
+      return []; // Return empty list on error
+    }
+  }
+
   // --- Appointments ---
 
   static Future<void> createAppointment({

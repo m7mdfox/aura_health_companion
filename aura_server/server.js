@@ -123,6 +123,23 @@ app.get("/api/chat/history/:roomId", async (req, res) => {
   }
 });
 
+// --- NEW ROUTE: Delete Chat History for a Room ---
+app.delete("/api/chat/history/:roomId", async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const result = await Message.deleteMany({ roomId });
+    console.log(`🗑️ Deleted ${result.deletedCount} messages from room: ${roomId}`);
+    res.status(200).json({
+      success: true,
+      message: `Deleted ${result.deletedCount} messages`,
+      deletedCount: result.deletedCount
+    });
+  } catch (err) {
+    console.error("Error deleting chat history:", err);
+    res.status(500).json({ error: "Could not delete chat history" });
+  }
+});
+
 // ==================== TEST ROUTES ====================
 // Root route
 app.get("/", (req, res) => {
@@ -196,49 +213,62 @@ app.use((req, res) => {
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
-    // ==================== AUTO-DELETE PAST APPOINTMENTS ====================
-    const cleanupPastAppointments = async () => {
+    // ==================== AUTO-DELETE FINISHED APPOINTMENTS ====================
+    // Simple approach: Fetch all, check each, delete only those truly finished
+    const cleanupFinishedAppointments = async () => {
       try {
         const now = new Date();
-        const todayStr = now.toISOString().split('T')[0]; // "YYYY-MM-DD"
-        const currentTime = now.toTimeString().substring(0, 5); // "HH:mm"
+        console.log(`\n🧹 Running appointment cleanup at ${now.toLocaleString()}`);
 
-        console.log(`\n🧹 Running appointment cleanup at ${now.toISOString()}`);
+        // Fetch ALL appointments
+        const allAppointments = await Appointment.find({});
+        console.log(`   Found ${allAppointments.length} total appointments`);
 
-        // Find and delete appointments where:
-        // 1. The appointment date is before today, OR
-        // 2. The appointment date is today AND the end_time has passed
-        const result = await Appointment.deleteMany({
-          $or: [
-            // Past dates (before today)
-            { appointment_date: { $lt: new Date(todayStr) } },
-            // Today but end time has passed
-            {
-              $and: [
-                { appointment_date: { $gte: new Date(todayStr), $lt: new Date(new Date(todayStr).getTime() + 24 * 60 * 60 * 1000) } },
-                { end_time: { $lt: currentTime } }
-              ]
-            }
-          ]
-        });
+        const idsToDelete = [];
 
-        if (result.deletedCount > 0) {
-          console.log(`✅ Deleted ${result.deletedCount} past appointments`);
+        for (const appt of allAppointments) {
+          // Combine appointment_date + end_time to get full end datetime
+          const apptDate = new Date(appt.appointment_date);
+          const [endHour, endMin] = appt.end_time.split(':').map(Number);
+
+          // Create end datetime
+          const endDateTime = new Date(
+            apptDate.getFullYear(),
+            apptDate.getMonth(),
+            apptDate.getDate(),
+            endHour,
+            endMin,
+            0
+          );
+
+          // Add 15 minutes buffer
+          const deleteAfterTime = new Date(endDateTime.getTime() + 15 * 60 * 1000);
+
+          // Only delete if current time is AFTER (endTime + 15 minutes)
+          if (now > deleteAfterTime) {
+            console.log(`   🗑️ Will delete: ${appt._id} (ended at ${appt.end_time} on ${apptDate.toDateString()})`);
+            idsToDelete.push(appt._id);
+          }
+        }
+
+        if (idsToDelete.length > 0) {
+          const result = await Appointment.deleteMany({ _id: { $in: idsToDelete } });
+          console.log(`✅ Deleted ${result.deletedCount} finished appointments`);
         } else {
-          console.log(`✅ No past appointments to delete`);
+          console.log(`✅ No finished appointments to delete`);
         }
       } catch (err) {
-        console.error("❌ Error cleaning up past appointments:", err);
+        console.error("❌ Error cleaning up appointments:", err);
       }
     };
 
     // Run cleanup on server start
-    cleanupPastAppointments();
+    cleanupFinishedAppointments();
 
     // Schedule cleanup to run every hour
     cron.schedule("0 * * * *", () => {
       console.log("⏰ Scheduled cleanup triggered");
-      cleanupPastAppointments();
+      cleanupFinishedAppointments();
     });
 
     console.log("🗓️  Appointment cleanup scheduler initialized (runs every hour)");

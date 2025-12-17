@@ -66,7 +66,7 @@ router.post("/", async (req, res) => {
 // ----------------------
 // Handles both "Get All" and "Filter by Name/Specialty"
 router.get("/", async (req, res) => {
-  console.log("--> Received request for Doctors"); 
+  console.log("--> Received request for Doctors");
   try {
     const { specialty, name } = req.query;
     const filter = {};
@@ -76,12 +76,28 @@ router.get("/", async (req, res) => {
     if (name) filter.name = new RegExp(name, "i"); // Case-insensitive regex
 
     const doctors = await Doctor.find(filter).lean();
-    
+
     console.log(`--> Found ${doctors.length} doctors`);
     res.json(doctors);
 
   } catch (err) {
     console.error("--> Error finding doctors:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ----------------------
+// 3b. GET UNIQUE SPECIALTIES (for dynamic filters)
+// ----------------------
+router.get("/specialties/list", async (req, res) => {
+  try {
+    const specialties = await Doctor.distinct("specialty");
+    // Filter out null/empty values
+    const validSpecialties = specialties.filter(s => s && s.trim() !== '');
+    console.log(`--> Found ${validSpecialties.length} unique specialties`);
+    res.json(validSpecialties);
+  } catch (err) {
+    console.error("--> Error fetching specialties:", err);
     res.status(500).json({ error: err.message });
   }
 });
