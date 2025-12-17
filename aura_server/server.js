@@ -25,6 +25,8 @@ import scheduleRoutes from "./routes/scheduleRoutes.js";
 import aiInsightsRoutes from "./routes/aiInsights.js";
 import pointsRoutes from "./routes/pointsRoutes.js";
 import challengeRoutes from "./routes/challengeRoutes.js";
+import cron from "node-cron";
+import Appointment from "./models/Appointment.js";
 
 // Fix for __dirname in ES Modules
 const __filename = fileURLToPath(import.meta.url);
@@ -194,6 +196,52 @@ app.use((req, res) => {
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
+    // ==================== AUTO-DELETE PAST APPOINTMENTS ====================
+    const cleanupPastAppointments = async () => {
+      try {
+        const now = new Date();
+        const todayStr = now.toISOString().split('T')[0]; // "YYYY-MM-DD"
+        const currentTime = now.toTimeString().substring(0, 5); // "HH:mm"
+
+        console.log(`\n🧹 Running appointment cleanup at ${now.toISOString()}`);
+
+        // Find and delete appointments where:
+        // 1. The appointment date is before today, OR
+        // 2. The appointment date is today AND the end_time has passed
+        const result = await Appointment.deleteMany({
+          $or: [
+            // Past dates (before today)
+            { appointment_date: { $lt: new Date(todayStr) } },
+            // Today but end time has passed
+            {
+              $and: [
+                { appointment_date: { $gte: new Date(todayStr), $lt: new Date(new Date(todayStr).getTime() + 24 * 60 * 60 * 1000) } },
+                { end_time: { $lt: currentTime } }
+              ]
+            }
+          ]
+        });
+
+        if (result.deletedCount > 0) {
+          console.log(`✅ Deleted ${result.deletedCount} past appointments`);
+        } else {
+          console.log(`✅ No past appointments to delete`);
+        }
+      } catch (err) {
+        console.error("❌ Error cleaning up past appointments:", err);
+      }
+    };
+
+    // Run cleanup on server start
+    cleanupPastAppointments();
+
+    // Schedule cleanup to run every hour
+    cron.schedule("0 * * * *", () => {
+      console.log("⏰ Scheduled cleanup triggered");
+      cleanupPastAppointments();
+    });
+
+    console.log("🗓️  Appointment cleanup scheduler initialized (runs every hour)");
     console.log("\n✅ MongoDB connected successfully");
 
     // List all registered models
