@@ -5,45 +5,107 @@ import 'package:flutter/material.dart';
 import 'package:aura_health_companion/ui/screens/health_journey_game/game_screen.dart';
 import 'package:aura_health_companion/ui/screens/fitness_coach/fitness_coach_main.dart';
 import 'package:aura_health_companion/ui/screens/nutrition/nutrition_main_entry.dart';
+import 'package:aura_health_companion/ui/screens/challenges/challenges_screen.dart';
 
 class ServicesScreen extends StatelessWidget {
   const ServicesScreen({super.key});
 
   static const List<Map<String, dynamic>> services = [
-    {"title": "Watch Data", "icon": Icons.watch, "route": "/watch", "color": Color.fromARGB(255, 0, 21, 139)},
-    {"title": "Request Doctor", "icon": Icons.person_search, "route": "/request_doctor", "color": Color(0xFF2563EB)}, 
-    {"title": "Medicine", "icon": Icons.medication, "route": "/medicine", "color": Colors.red},
-    {"title": "Mental Health", "icon": Icons.psychology, "route": "/mental_health", "color": Colors.purple},
-    {"title": "Nutrition & Diet", "icon": Icons.restaurant, "route": "/nutrition", "color": Colors.orange},
-    {"title": "Prevention", "icon": Icons.health_and_safety, "route": "/prevention", "color": Colors.green},
-    {"title": "Fitness Coach", "icon": Icons.fitness_center, "route": "/fitness", "color": Colors.cyan},
-    {"title": "Emergency", "icon": Icons.emergency, "route": "/emergency", "color": Colors.redAccent},
-    {"title": "Genetic Health", "icon": Icons.biotech, "route": "/genetic_health", "color": Colors.indigo},
-    {"title": "Community", "icon": Icons.groups, "route": "/community", "color": Colors.pink},
-    {"title": "Challenges", "icon": Icons.flag, "route": "/challenges", "color": Colors.amber},
-    {"title": "Reminders", "icon": Icons.alarm, "route": "/reminders", "color": Colors.teal},
-    {"title": "Order Medicine", "icon": Icons.local_pharmacy, "route": "/order_medicine", "color": Colors.deepOrange},
+    {
+      "title": "Watch Data",
+      "icon": Icons.watch,
+      "route": "/watch",
+      "color": Color.fromARGB(255, 0, 21, 139)
+    },
+    {
+      "title": "Request Doctor",
+      "icon": Icons.person_search,
+      "route": "/request_doctor",
+      "color": Color(0xFF2563EB)
+    },
+    {
+      "title": "Medicine",
+      "icon": Icons.medication,
+      "route": "/medicine",
+      "color": Colors.red
+    },
+    {
+      "title": "Mental Health",
+      "icon": Icons.psychology,
+      "route": "/mental_health",
+      "color": Colors.purple
+    },
+    {
+      "title": "Nutrition & Diet",
+      "icon": Icons.restaurant,
+      "route": "/nutrition",
+      "color": Colors.orange
+    },
+    {
+      "title": "Prevention",
+      "icon": Icons.health_and_safety,
+      "route": "/prevention",
+      "color": Colors.green
+    },
+    {
+      "title": "Fitness Coach",
+      "icon": Icons.fitness_center,
+      "route": "/fitness",
+      "color": Colors.cyan
+    },
+    {
+      "title": "Emergency",
+      "icon": Icons.emergency,
+      "route": "/emergency",
+      "color": Colors.redAccent
+    },
+    {
+      "title": "Genetic Health",
+      "icon": Icons.biotech,
+      "route": "/genetic_health",
+      "color": Colors.indigo
+    },
+    {
+      "title": "Community",
+      "icon": Icons.groups,
+      "route": "/community",
+      "color": Colors.pink
+    },
+    {
+      "title": "Challenges",
+      "icon": Icons.flag,
+      "route": "/challenges",
+      "color": Colors.amber
+    },
+    {
+      "title": "Reminders",
+      "icon": Icons.alarm,
+      "route": "/reminders",
+      "color": Colors.teal
+    },
+    {
+      "title": "Order Medicine",
+      "icon": Icons.local_pharmacy,
+      "route": "/order_medicine",
+      "color": Colors.deepOrange
+    },
   ];
 
   void _navigateToService(BuildContext context, String route) {
     if (route == '/medicine') {
       Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => MedicineScreenn())
-      );
-    } 
-    else if (route == '/mental_health') {
+          context, MaterialPageRoute(builder: (context) => MedicineScreenn()));
+    } else if (route == '/mental_health') {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const MentalHealthHomeScreen()),
       );
-    } 
-    else if (route == '/nutrition') {
+    } else if (route == '/nutrition') {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const NutritionMainEntry()),
       );
-    } 
+    }
     // 👇👇👇 هنا الإصلاح 👇👇👇
     else if (route == '/request_doctor') {
       Navigator.push(
@@ -52,14 +114,18 @@ class ServicesScreen extends StatelessWidget {
       );
     }
     // 👆👆👆
-    
+
     else if (route == '/fitness') {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const FitnessCoachMain()),
       );
-    }
-    else {
+    } else if (route == '/challenges') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const ChallengesScreen()),
+      );
+    } else {
       // الروابط الأخرى التي قد تكون مسجلة في main.dart
       Navigator.pushNamed(context, route);
     }
@@ -77,7 +143,8 @@ class ServicesScreen extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F1120) : const Color(0xFFF5F7FA),
+      backgroundColor:
+          isDark ? const Color(0xFF0F1120) : const Color(0xFFF5F7FA),
       appBar: AppBar(
         title: const Text(
           'Services',
@@ -91,9 +158,9 @@ class ServicesScreen extends StatelessWidget {
               bottomRight: Radius.circular(30),
             ),
             gradient: LinearGradient(
-              colors: isDark 
-                ? [const Color(0xFF1A1D2E), const Color(0xFF0F1120)]
-                : [const Color(0xFF00177E), const Color(0xFF0F1120)],
+              colors: isDark
+                  ? [const Color(0xFF1A1D2E), const Color(0xFF0F1120)]
+                  : [const Color(0xFF00177E), const Color(0xFF0F1120)],
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
             ),
@@ -109,9 +176,9 @@ class ServicesScreen extends StatelessWidget {
             children: [
               // بطاقة اللعبة المميزة
               _buildGameCard(context, isDark),
-              
+
               const SizedBox(height: 24),
-              
+
               // عنوان قسم الخدمات
               Align(
                 alignment: Alignment.centerRight,
@@ -124,9 +191,9 @@ class ServicesScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // شبكة الخدمات
               GridView.count(
                 shrinkWrap: true,
@@ -142,7 +209,7 @@ class ServicesScreen extends StatelessWidget {
                   );
                 }).toList(),
               ),
-              
+
               const SizedBox(height: 20),
             ],
           ),
@@ -161,15 +228,16 @@ class ServicesScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           gradient: LinearGradient(
             colors: isDark
-              ? [const Color(0xFF2D1B69), const Color(0xFF6B46C1)]
-              : [const Color(0xFF6B46C1), const Color(0xFF9333EA)],
+                ? [const Color(0xFF2D1B69), const Color(0xFF6B46C1)]
+                : [const Color(0xFF6B46C1), const Color(0xFF9333EA)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           boxShadow: [
             BoxShadow(
-              color: (isDark ? const Color(0xFF9333EA) : const Color(0xFF6B46C1))
-                  .withOpacity(0.3),
+              color:
+                  (isDark ? const Color(0xFF9333EA) : const Color(0xFF6B46C1))
+                      .withOpacity(0.3),
               blurRadius: 15,
               offset: const Offset(0, 8),
             ),
@@ -202,7 +270,7 @@ class ServicesScreen extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             // المحتوى
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -312,9 +380,9 @@ class ServicesScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: isDark 
-              ? Colors.black.withOpacity(0.3)
-              : Colors.black.withOpacity(0.08),
+            color: isDark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.black.withOpacity(0.08),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

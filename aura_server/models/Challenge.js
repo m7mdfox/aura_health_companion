@@ -62,6 +62,13 @@ const challengeSchema = new mongoose.Schema({
         type: String,
         default: '🏆'
     },
+    // Action that triggers automatic progress update
+    action_trigger: {
+        type: String,
+        enum: ['medicine_taken', 'mood_log', 'water_goal', 'exercise', 'daily_login', null],
+        default: null,
+        index: true
+    },
     is_active: {
         type: Boolean,
         default: true,

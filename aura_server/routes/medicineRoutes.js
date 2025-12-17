@@ -285,6 +285,13 @@ router.put("/update-quantity", authMiddleware, async (req, res) => {
         newTotal: result.newTotal
       };
       console.log(`🎯 Points awarded for taking medicine: ${medicine.trade_name}, total: ${result.newTotal}`);
+
+      // Update challenge progress for medicine_taken action
+      const challengeUpdates = await pointsService.updateChallengeProgress(req.user.auth_id, 'medicine_taken');
+      if (challengeUpdates.length > 0) {
+        console.log(`🏆 Challenge progress updated:`, challengeUpdates);
+        pointsAwarded.challengeUpdates = challengeUpdates;
+      }
     } catch (pointsErr) {
       console.error("❌ Failed to award points for medicine:", pointsErr);
     }

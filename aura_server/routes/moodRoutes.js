@@ -75,6 +75,13 @@ router.post("/", async (req, res) => {
           newTotal: result.newTotal
         };
         console.log(`🎯 Points awarded for mood logging: ${trimmedAuthId}, total: ${result.newTotal}`);
+
+        // Update challenge progress for mood_log action
+        const challengeUpdates = await pointsService.updateChallengeProgress(trimmedAuthId, 'mood_log');
+        if (challengeUpdates.length > 0) {
+          console.log(`🏆 Challenge progress updated:`, challengeUpdates);
+          pointsAwarded.challengeUpdates = challengeUpdates;
+        }
       } catch (pointsErr) {
         console.error("❌ Failed to award points for mood log:", pointsErr);
       }

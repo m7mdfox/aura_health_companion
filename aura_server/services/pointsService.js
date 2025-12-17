@@ -273,6 +273,62 @@ const pointsService = {
         return summary;
     },
 
+    /**
+     * Update challenge progress for all active challenges linked to an action type
+     * @param {string} userAuthId - User's auth ID
+     * @param {string} actionType - Type of action (medicine_taken, mood_log, etc.)
+     * @param {number} increment - Amount to increment progress by
+     * @returns {Array} - Updated challenges
+     */
+    async updateChallengeProgress(userAuthId, actionType, increment = 1) {
+        try {
+            console.log(`🎯 Updating challenge progress for ${userAuthId}, action: ${actionType}`);
+
+            // Find all active challenges for this user
+            const activeChallenges = await UserChallenge.find({
+                user_auth_id: userAuthId,
+                status: 'in_progress'
+            }).populate('challenge_id');
+
+            const updatedChallenges = [];
+
+            for (const userChallenge of activeChallenges) {
+                // Check if challenge is linked to this action type
+                if (userChallenge.challenge_id?.action_trigger === actionType) {
+                    userChallenge.progress += increment;
+                    console.log(`📈 Challenge "${userChallenge.challenge_id.title}" progress: ${userChallenge.progress}/${userChallenge.target}`);
+
+                    // Check if challenge is now completed
+                    if (userChallenge.progress >= userChallenge.target) {
+                        userChallenge.status = 'completed';
+                        userChallenge.completed_at = new Date();
+                        userChallenge.points_awarded = userChallenge.challenge_id.points_reward;
+
+                        console.log(`🏆 Challenge "${userChallenge.challenge_id.title}" COMPLETED! Awarding ${userChallenge.points_awarded} points`);
+
+                        // Award challenge completion points
+                        await this.awardChallengePoints(userAuthId, userChallenge.challenge_id);
+                    }
+
+                    await userChallenge.save();
+                    updatedChallenges.push({
+                        challengeId: userChallenge.challenge_id._id,
+                        title: userChallenge.challenge_id.title,
+                        progress: userChallenge.progress,
+                        target: userChallenge.target,
+                        completed: userChallenge.status === 'completed',
+                        pointsAwarded: userChallenge.status === 'completed' ? userChallenge.points_awarded : 0
+                    });
+                }
+            }
+
+            return updatedChallenges;
+        } catch (error) {
+            console.error('❌ Error updating challenge progress:', error);
+            return [];
+        }
+    },
+
     // Export points config for reference
     POINTS_CONFIG
 };
