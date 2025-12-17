@@ -219,6 +219,42 @@ router.post("/add-medicine", authMiddleware, async (req, res) => {
   }
 });
 
+// Get last dose time for a medicine
+router.get("/:medicineId/last-dose", authMiddleware, async (req, res) => {
+  try {
+    const { medicineId } = req.params;
+
+    // Validate medicineId format
+    if (!mongoose.Types.ObjectId.isValid(medicineId)) {
+      return res.status(400).json({ error: "Invalid medicineId format" });
+    }
+
+    // Find the most recent dose for this medicine
+    const lastDose = await MedicineDoseTime.findOne({ medicine_id: medicineId })
+      .sort({ created_at: -1 })
+      .limit(1);
+
+    if (!lastDose) {
+      return res.status(200).json({
+        success: true,
+        data: null,
+        message: "No doses recorded for this medicine"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        dose_time: lastDose.dose_time,
+        created_at: lastDose.created_at
+      }
+    });
+  } catch (e) {
+    console.error("Get last dose error:", e);
+    res.status(500).json({ error: `Failed to get last dose: ${e.message}` });
+  }
+});
+
 // Update medicine quantity and log dose time
 router.put("/update-quantity", authMiddleware, async (req, res) => {
   console.log("Update-quantity route hit:", req.body);

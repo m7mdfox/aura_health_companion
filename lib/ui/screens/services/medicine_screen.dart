@@ -1035,8 +1035,155 @@ class _MedicineScreenState extends State<MedicineScreenn> {
     }
   }
 
+  // +++ DOSE TIMING FUNCTIONS +++
+
+  /// Fetch the last dose time for a medicine from API
+  Future<DateTime?> _getLastDoseTime(String medicineId) async {
+    try {
+      final token = AuthService.token;
+      if (token == null) return null;
+
+      final url =
+          Uri.parse('http://10.0.2.2:4000/api/medicine/$medicineId/last-dose');
+      final response = await http.get(
+        url,
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['data'] != null && data['data']['created_at'] != null) {
+          return DateTime.parse(data['data']['created_at']);
+        }
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching last dose time: $e');
+      return null;
+    }
+  }
+
+  /// Get the next scheduled dose time
+  DateTime? _getScheduledDoseTime(List<String> doseTimes) {
+    return _getNextDoseTime(doseTimes);
+  }
+
+  /// Calculate hours and minutes until next dose for display
+  String _formatTimeRemaining(Duration duration) {
+    if (duration.isNegative) return "now";
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes.remainder(60);
+    if (hours > 0 && minutes > 0) return "$hours hours $minutes minutes";
+    if (hours > 0) return "$hours hours";
+    if (minutes > 0) return "$minutes minutes";
+    return "less than a minute";
+  }
+
+  /// Show blocked dialog (took dose too recently)
+  Future<void> _showBlockedDoseDialog(Duration timeRemaining) async {
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(Icons.block, color: Colors.red, size: 28),
+            const SizedBox(width: 12),
+            const Expanded(child: Text('Already Taken')),
+          ],
+        ),
+        content: Text(
+          'You already took this dose recently.\n\nNext dose available in ${_formatTimeRemaining(timeRemaining)}.',
+          style: GoogleFonts.mulish(fontSize: 16),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Show early dose confirmation dialog
+  Future<bool> _showEarlyDoseConfirmation(Duration earlyBy) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(Icons.access_time, color: Colors.orange, size: 28),
+            const SizedBox(width: 12),
+            const Expanded(child: Text('Taking Early')),
+          ],
+        ),
+        content: Text(
+          'You are taking this dose ${_formatTimeRemaining(earlyBy)} early.\n\nDo you want to continue?',
+          style: GoogleFonts.mulish(fontSize: 16),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF0D1B4C),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+            child:
+                const Text('Take Now', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
+  }
+
+  /// Show late dose confirmation dialog
+  Future<bool> _showLateDoseConfirmation(Duration lateBy) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(Icons.warning_amber, color: Colors.deepOrange, size: 28),
+            const SizedBox(width: 12),
+            const Expanded(child: Text('Taking Late')),
+          ],
+        ),
+        content: Text(
+          'This dose is ${_formatTimeRemaining(lateBy)} late.\n\nWould you still like to take it?',
+          style: GoogleFonts.mulish(fontSize: 16),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.deepOrange,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+            child:
+                const Text('Take Now', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
+  }
+
   Future<void> _takeDose(Medicine med) async {
-    // ... (This function remains unchanged)
+    // Check quantity first
     if (med.quantity <= 0) {
       if (mounted) {
         await _showEnhancedErrorDialog(
@@ -1048,7 +1195,53 @@ class _MedicineScreenState extends State<MedicineScreenn> {
       return;
     }
 
+    // +++ DOSE TIMING CHECK +++
     setState(() => _isLoading = true);
+
+    // Get last dose time
+    final lastDoseTime = await _getLastDoseTime(med.id);
+    final now = DateTime.now();
+
+    // Constants for timing
+    const minHoursBetweenDoses = 4;
+    const toleranceMinutes = 15;
+
+    if (lastDoseTime != null) {
+      final timeSinceLastDose = now.difference(lastDoseTime);
+
+      // BLOCK: Less than 4 hours since last dose
+      if (timeSinceLastDose.inHours < minHoursBetweenDoses) {
+        setState(() => _isLoading = false);
+        final timeRemaining =
+            Duration(hours: minHoursBetweenDoses) - timeSinceLastDose;
+        await _showBlockedDoseDialog(timeRemaining);
+        return;
+      }
+    }
+
+    // Check scheduled time for early/late
+    final scheduledTime = _getScheduledDoseTime(med.doseTimes);
+    if (scheduledTime != null) {
+      final difference = scheduledTime.difference(now);
+
+      // EARLY: More than 15 minutes before scheduled time (and at least 4h passed)
+      if (difference.inMinutes > toleranceMinutes) {
+        setState(() => _isLoading = false);
+        final shouldContinue = await _showEarlyDoseConfirmation(difference);
+        if (!shouldContinue) return;
+        setState(() => _isLoading = true);
+      }
+      // LATE: More than 15 minutes after scheduled time
+      else if (difference.inMinutes < -toleranceMinutes) {
+        setState(() => _isLoading = false);
+        final lateBy = Duration(minutes: -difference.inMinutes);
+        final shouldContinue = await _showLateDoseConfirmation(lateBy);
+        if (!shouldContinue) return;
+        setState(() => _isLoading = true);
+      }
+    }
+    // +++ END DOSE TIMING CHECK +++
+
     try {
       final token = AuthService.token;
       if (token == null) {
@@ -1624,6 +1817,50 @@ class _MedicineScreenState extends State<MedicineScreenn> {
                                                   TimeOfDay.now(),
                                         );
                                         if (time != null) {
+                                          // +++ VALIDATE 4 HOUR GAP +++
+                                          final newTimeMinutes =
+                                              time.hour * 60 + time.minute;
+                                          bool tooClose = false;
+                                          String conflictingTime = '';
+
+                                          for (int i = 0;
+                                              i < _selectedDoseTimes.length;
+                                              i++) {
+                                            if (i == index)
+                                              continue; // Skip self
+                                            final existingTime =
+                                                _selectedDoseTimes[i];
+                                            if (existingTime == null) continue;
+
+                                            final existingMinutes =
+                                                existingTime.hour * 60 +
+                                                    existingTime.minute;
+                                            int diff = (newTimeMinutes -
+                                                    existingMinutes)
+                                                .abs();
+                                            // Handle wrap-around (e.g., 23:00 and 01:00)
+                                            if (diff > 12 * 60)
+                                              diff = 24 * 60 - diff;
+
+                                            if (diff < 4 * 60) {
+                                              // Less than 4 hours
+                                              tooClose = true;
+                                              conflictingTime =
+                                                  existingTime.format(context);
+                                              break;
+                                            }
+                                          }
+
+                                          if (tooClose) {
+                                            await _showEnhancedErrorDialog(
+                                              context: context,
+                                              message:
+                                                  'Dose times must be at least 4 hours apart.\n\nThe selected time ${time.format(context)} is too close to $conflictingTime.',
+                                            );
+                                            return;
+                                          }
+                                          // +++ END VALIDATION +++
+
                                           dialogSetState(() {
                                             _selectedDoseTimes[index] = time;
                                           });

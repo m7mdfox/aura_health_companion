@@ -7,6 +7,7 @@ import 'package:aura_health_companion/ui/screens/fitness_coach/fitness_coach_mai
 import 'package:aura_health_companion/ui/screens/nutrition/nutrition_main_entry.dart';
 import 'package:aura_health_companion/ui/screens/challenges/challenges_screen.dart';
 import 'package:aura_health_companion/ui/screens/chatbot video/video_call_screen.dart';
+import 'package:aura_health_companion/ui/screens/watch/watch_data_screen.dart';
 
 class ServicesScreen extends StatelessWidget {
   const ServicesScreen({super.key});
@@ -99,7 +100,12 @@ class ServicesScreen extends StatelessWidget {
   ];
 
   void _navigateToService(BuildContext context, String route) {
-    if (route == '/medicine') {
+    if (route == '/watch') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const WatchDataScreen()),
+      );
+    } else if (route == '/medicine') {
       Navigator.push(
           context, MaterialPageRoute(builder: (context) => MedicineScreenn()));
     } else if (route == '/mental_health') {
